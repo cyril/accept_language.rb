@@ -5,8 +5,8 @@ A tiny library for parsing the `Accept-Language` header from browsers (as define
 ## Status
 
 [![Gem Version](https://badge.fury.io/rb/accept_language.svg)](https://badge.fury.io/rb/accept_language)
-[![TravisCI](https://travis-ci.org/cyril/accept_language.svg?branch=master)](https://travis-ci.org/cyril/accept_language)
-[![Inline Docs](https://inch-ci.org/github/cyril/accept_language.svg)](https://inch-ci.org/github/cyril/accept_language)
+[![TravisCI](https://travis-ci.org/cyril/accept_language.rb.svg?branch=master)](https://travis-ci.org/cyril/accept_language.rb)
+[![Inline Docs](https://inch-ci.org/github/cyril/accept_language.rb.svg)](https://inch-ci.org/github/cyril/accept_language.rb)
 
 ## Installation
 
@@ -52,7 +52,7 @@ AcceptLanguage.intersection('fr;q=0, zh;q=0.4', :fr) # => nil
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/cyril/accept_language. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+Bug reports and pull requests are welcome on GitHub at https://github.com/cyril/accept_language.rb. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
 
 ## Versioning
 
@@ -64,4 +64,4 @@ The gem is available as open source under the terms of the [MIT License](https:/
 
 ## Code of Conduct
 
-Everyone interacting in the AcceptLanguage project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/cyril/accept_language/blob/master/CODE_OF_CONDUCT.md).
+Everyone interacting in the AcceptLanguage project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/cyril/accept_language.rb/blob/master/CODE_OF_CONDUCT.md).
