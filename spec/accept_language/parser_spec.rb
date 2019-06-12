@@ -17,7 +17,7 @@ RSpec.describe AcceptLanguage::Parser do
 
     it 'orders the tags with their respective quality' do
       actual = described_class.new(raw_input).call
-      expect(actual).to eq %i[fr-CH fr en de *]
+      expect(actual).to eq %i[fr-ch fr en de *]
     end
   end
 end

@@ -32,7 +32,7 @@ It's intended to be used in a Web server that supports some level of internation
 
 ```ruby
 AcceptLanguage.parse('da, en-gb;q=0.8, en;q=0.7') # => [:da, :"en-gb", :en]
-AcceptLanguage.parse('fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5') # => [:"fr-CH", :fr, :en, :de, :*]
+AcceptLanguage.parse('fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5') # => [:"fr-ch", :fr, :en, :de, :*]
 ```
 
 In order to help facilitate better i18n, a method is provided to return the intersection of the languages the user prefers and the languages your application supports.

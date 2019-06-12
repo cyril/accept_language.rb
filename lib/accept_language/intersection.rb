@@ -12,8 +12,8 @@ module AcceptLanguage
 
     def initialize(accepted_languages, default_supported_language, *other_supported_languages, truncate: true)
       @accepted_languages         = Parser.new(accepted_languages).call
-      @default_supported_language = default_supported_language.to_sym
-      @other_supported_languages  = other_supported_languages.map(&:to_sym).to_set
+      @default_supported_language = default_supported_language.to_sym.downcase
+      @other_supported_languages  = other_supported_languages.map { |lang| lang.to_sym.downcase }.to_set
 
       return unless truncate
 

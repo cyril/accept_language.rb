@@ -3,6 +3,16 @@
 require_relative '../spec_helper'
 
 RSpec.describe AcceptLanguage::Intersection do
+  context 'when the best preferred language is not in the same case' do
+    let(:accepted_languages)  { 'DA' }
+    let(:supported_languages) { %i[da] }
+
+    it 'returns the best preferred language' do
+      actual = described_class.new(accepted_languages, *supported_languages).call
+      expect(actual).to be :da
+    end
+  end
+
   context 'with the default truncate option' do
     let(:accepted_languages)  { 'da, en-gb;q=0.8, ko;q=0.7' }
     let(:supported_languages) { %i[ar en ro] }

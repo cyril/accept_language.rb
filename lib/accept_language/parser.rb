@@ -21,6 +21,8 @@ module AcceptLanguage
     def preferences
       @string.delete(' ').split(',').inject({}) do |result, language|
         tag, quality = language.split(/;q=/i)
+
+        tag     = tag.downcase
         quality = quality.nil? ? 1.0 : quality.to_f
 
         next result if quality.zero?
