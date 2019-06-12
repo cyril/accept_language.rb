@@ -56,7 +56,6 @@ AcceptLanguage.intersection('fr;q=0, zh;q=0.4', :fr) # => nil
 # app/controllers/application_controller.rb
 class ApplicationController < ActionController::Base
   before_action :best_locale_from_request!
-  rescue_from Error::NotAcceptable::Language, with: :response_for_not_acceptable_error
 
   def best_locale_from_request!
     I18n.locale = best_locale_from_request
@@ -68,20 +67,14 @@ class ApplicationController < ActionController::Base
     string = request.headers.fetch('HTTP_ACCEPT_LANGUAGE')
     locale = AcceptLanguage.intersection(string, I18n.default_locale, *I18n.available_locales)
 
-    raise Error::NotAcceptable::Language if locale.nil?
+    # If the server cannot serve any matching language,
+    # it can theoretically send back a 406 (Not Acceptable) error code.
+    # But, for a better user experience, this is rarely done and more
+    # common way is to ignore the Accept-Language header in this case.
+    return I18n.default_locale if locale.nil?
 
     locale
   end
-
-  def response_for_not_acceptable_error
-    render json: { error: 'Unsupported language' }, status: :not_acceptable
-  end
-end
-```
-
-```ruby
-# lib/error/not_acceptable/language.rb
-class Error::NotAcceptable::Language < StandardError
 end
 ```
 
