@@ -31,8 +31,8 @@ It's intended to be used in a Web server that supports some level of internation
 Examples:
 
 ```ruby
-AcceptLanguage.parse('da, en-gb;q=0.8, en;q=0.7') # => [:da, :"en-gb", :en]
-AcceptLanguage.parse('fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5') # => [:"fr-ch", :fr, :en, :de, :*]
+AcceptLanguage.parse('da, en-gb;q=0.8, en;q=0.7')                     # => {:da=>1.0, :"en-gb"=>0.8, :en=>0.7}
+AcceptLanguage.parse('fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5')  # => {:"fr-ch"=>1.0, :fr=>0.9, :en=>0.8, :de=>0.7, :*=>0.5}
 ```
 
 In order to help facilitate better i18n, a method is provided to return the intersection of the languages the user prefers and the languages your application supports.
@@ -40,14 +40,13 @@ In order to help facilitate better i18n, a method is provided to return the inte
 Examples:
 
 ```ruby
-AcceptLanguage.intersection('da, en-gb;q=0.8, en;q=0.7', :ar, :da, :ja, :ro) # => :da
-AcceptLanguage.intersection('da, en-gb;q=0.8, en;q=0.7', :ar, :ja, :ro) # => nil
-AcceptLanguage.intersection('fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5', :en, :ja) # => :en
-AcceptLanguage.intersection('fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5', :ja) # => :ja
-AcceptLanguage.intersection('ko, fr-CH;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5', :fr, :de) # => :fr
-AcceptLanguage.intersection('ko, fr-CH;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5', :fr, :de, truncate: false) # => :de
-AcceptLanguage.intersection('*;q=0.5, zh;q=0.4', :ja, :zh) # => :ja
-AcceptLanguage.intersection('fr;q=0, zh;q=0.4', :fr) # => nil
+AcceptLanguage.intersection('da, en-gb;q=0.8, en;q=0.7', :ja, :ro, :da) # => :da
+AcceptLanguage.intersection('da, en-gb;q=0.8, en;q=0.7', :ja, :ro)      # => nil
+AcceptLanguage.intersection('fr-CH', :fr, two_letter_truncate: false)   # => nil
+AcceptLanguage.intersection('fr-CH', :fr, two_letter_truncate: true)    # => :fr
+AcceptLanguage.intersection('de, zh;q=0.4, fr;q=0', :fr)                # => nil
+AcceptLanguage.intersection('de, zh;q=0.4, *;q=0.5, fr;q=0', :fr)       # => nil
+AcceptLanguage.intersection('de, zh;q=0.4, *;q=0.5, fr;q=0', :ar)       # => :ar
 ```
 
 ### Rails integration example

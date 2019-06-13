@@ -7,9 +7,8 @@ Gem::Specification.new do |spec|
   spec.email         = ['contact@cyril.email']
 
   spec.summary       = 'Parser for Accept-Language request HTTP header'
-  spec.description   = 'Parses the Accept-Language header from an HTTP '      \
-                       'request and produces a list of languages sorted by '  \
-                       'quality.'
+  spec.description   = 'Parses the Accept-Language header from an HTTP ' \
+                       'request and produces a hash of languages and qualities.'
   spec.homepage      = 'https://github.com/cyril/accept_language.rb'
   spec.license       = 'MIT'
 

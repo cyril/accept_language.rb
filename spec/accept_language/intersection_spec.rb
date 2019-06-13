@@ -3,103 +3,98 @@
 require_relative '../spec_helper'
 
 RSpec.describe AcceptLanguage::Intersection do
-  context 'when the best preferred language is not in the same case' do
-    let(:accepted_languages)  { 'DA' }
-    let(:supported_languages) { %i[da] }
+  context 'when the case is different' do
+    let(:raw_input)       { 'EN' }
+    let(:supported_langs) { %i[en] }
 
-    it 'returns the best preferred language' do
-      actual = described_class.new(accepted_languages, *supported_languages).call
-      expect(actual).to be :da
-    end
-  end
-
-  context 'with the default truncate option' do
-    let(:accepted_languages)  { 'da, en-gb;q=0.8, ko;q=0.7' }
-    let(:supported_languages) { %i[ar en ro] }
-
-    it 'returns the best preferred truncated language' do
-      actual = described_class.new(accepted_languages, *supported_languages).call
+    it 'finds the best language and return in downcase' do
+      actual = described_class.new(raw_input, *supported_langs).call
       expect(actual).to be :en
     end
   end
 
-  context 'when the truncate option is enable' do
-    let(:accepted_languages)  { 'da, en-gb;q=0.8, ko;q=0.7' }
-    let(:supported_languages) { %i[ar en ro] }
+  context 'when the two letter truncate option is used' do
+    let(:raw_input)       { 'da, en-gb;q=0.8, ko;q=0.7' }
+    let(:supported_langs) { %i[ar en ro] }
 
-    it 'returns the best preferred truncated language' do
-      actual = described_class.new(accepted_languages, *supported_languages, truncate: true).call
-      expect(actual).to be :en
+    context 'when enable' do
+      let(:two_letter_truncate) { true }
+
+      it 'interprets "en-gb" as "en" and returns english' do
+        actual = described_class.new(raw_input, *supported_langs, two_letter_truncate: two_letter_truncate).call
+        expect(actual).to be :en
+      end
+    end
+
+    context 'when disable' do
+      let(:two_letter_truncate) { false }
+
+      it 'cannot interprets "en-gb" as "en" and returns nothing' do
+        actual = described_class.new(raw_input, *supported_langs, two_letter_truncate: two_letter_truncate).call
+        expect(actual).to be nil
+      end
     end
   end
 
-  context 'when the truncate option is disable' do
-    let(:accepted_languages)  { 'da, en-gb;q=0.8, ko;q=0.7' }
-    let(:supported_languages) { %i[ar en ro] }
-
-    it 'returns the best preferred truncated language' do
-      actual = described_class.new(accepted_languages, *supported_languages, truncate: false).call
-      expect(actual).to be nil
-    end
-  end
-
-  context 'when the best preferred language is available' do
-    let(:accepted_languages)  { 'da, en-gb;q=0.8, en;q=0.7' }
-    let(:supported_languages) { %i[ar da ja ro] }
+  context 'when the best preferred language is supported by the server' do
+    let(:raw_input)       { 'zh, ko;q=0.7' }
+    let(:supported_langs) { %i[zh ko] }
 
     it 'returns the best preferred language' do
-      actual = described_class.new(accepted_languages, *supported_languages).call
-      expect(actual).to be :da
+      actual = described_class.new(raw_input, *supported_langs).call
+      expect(actual).to be :zh
     end
   end
 
-  context 'when preferred languages are not available' do
-    let(:accepted_languages)  { 'da, en-gb;q=0.8, en;q=0.7' }
-    let(:supported_languages) { %i[ar ja ro] }
+  context 'when the best preferred languages are not available' do
+    let(:raw_input)       { 'zh, ko;q=0.7' }
+    let(:supported_langs) { %i[ko] }
+
+    it 'returns the next preferred languages' do
+      actual = described_class.new(raw_input, *supported_langs).call
+      expect(actual).to be :ko
+    end
+  end
+
+  context 'when preferred languages are not available at all' do
+    let(:raw_input)       { 'zh, ko;q=0.7' }
+    let(:supported_langs) { %i[fr it de] }
 
     it 'returns nothing' do
-      actual = described_class.new(accepted_languages, *supported_languages).call
+      actual = described_class.new(raw_input, *supported_langs).call
       expect(actual).to be nil
     end
   end
 
-  context 'when a preferred language is available' do
-    let(:accepted_languages)  { 'fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5' }
-    let(:supported_languages) { %i[en ja] }
+  context 'when using a wildcard' do
+    let(:raw_input)       { 'fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5' }
+    let(:supported_langs) { %i[ja] }
 
-    it 'returns the preferred language' do
-      actual = described_class.new(accepted_languages, *supported_languages).call
-      expect(actual).to be :en
-    end
-  end
-
-  context 'when a preferred language is not explicitly available' do
-    let(:accepted_languages)  { 'fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5' }
-    let(:supported_languages) { %i[ja] }
-
-    it 'returns any supported language' do
-      actual = described_class.new(accepted_languages, *supported_languages).call
+    it 'returns a supported language' do
+      actual = described_class.new(raw_input, *supported_langs).call
       expect(actual).to be :ja
     end
   end
 
-  context 'when the wildcard is the first choice' do
-    let(:accepted_languages)  { '*;q=0.5, zh;q=0.4' }
-    let(:supported_languages) { %i[ja] }
+  context 'when the only language that is supported is not acceptable' do
+    let(:supported_langs) { %i[fr] }
 
-    it 'returns any supported language' do
-      actual = described_class.new(accepted_languages, *supported_languages).call
-      expect(actual).to be :ja
+    context 'without a wildcard' do
+      let(:raw_input) { 'de, zh;q=0.4, fr;q=0' }
+
+      it 'returns nothing' do
+        actual = described_class.new(raw_input, *supported_langs).call
+        expect(actual).to be nil
+      end
     end
-  end
 
-  context 'when french is not an option' do
-    let(:accepted_languages)  { 'fr;q=0, zh;q=0.4' }
-    let(:supported_languages) { %i[fr] }
+    context 'with a wildcard' do
+      let(:raw_input) { 'de, zh;q=0.4, *;q=0.5, fr;q=0' }
 
-    it 'returns nothing' do
-      actual = described_class.new(accepted_languages, *supported_languages).call
-      expect(actual).to be nil
+      it 'returns nothing' do
+        actual = described_class.new(raw_input, *supported_langs).call
+        expect(actual).to be nil
+      end
     end
   end
 end
