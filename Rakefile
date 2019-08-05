@@ -9,7 +9,7 @@ require 'rubocop/rake_task'
 
 RuboCop::RakeTask.new
 
-namespace :test do
+namespace :spec do
   task :coverage do
     ENV['COVERAGE'] = 'true'
     Rake::Task['test'].invoke
