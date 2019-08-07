@@ -4,8 +4,8 @@
 module AcceptLanguage
   # @example
   #   AcceptLanguage.intersection('ja, en-gb;q=0.8, en;q=0.7', :ar, :ja) # => :ja
-  def self.intersection(raw_input, *supported_langs, two_letter_truncate: true)
-    Intersection.new(raw_input, *supported_langs, two_letter_truncate: two_letter_truncate).call
+  def self.intersection(raw_input, *supported_langs, two_letter_truncate: true, enforce_bcp47: false)
+    Intersection.new(raw_input, *supported_langs, two_letter_truncate: two_letter_truncate, enforce_bcp47: enforce_bcp47).call
   end
 
   # @example

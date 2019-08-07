@@ -38,4 +38,38 @@ RSpec.describe AcceptLanguage::Parser do
       end
     end
   end
+
+  context 'BCP 47' do
+    it 'handles two letter' do
+      expect(described_class.bcp47('EN')).to eql(:'en')
+    end
+
+    it 'handles two-two letter' do
+      expect(described_class.bcp47(:'EN-en')).to eql(:'en-EN')
+    end
+
+    it 'handles multiple two letter subtags' do
+      expect(described_class.bcp47('EN-en-za-fo')).to eql(:'en-EN-ZA-FO')
+    end
+
+    it 'handles two-four letter' do
+      expect(described_class.bcp47(:'EN-inTL')).to eql(:'en-Intl')
+    end
+
+    it 'handles multiple four letter subtags' do
+      expect(described_class.bcp47('EN-inTL-extr-tags')).to eql(:'en-Intl-Extr-Tags')
+    end
+
+    it 'handles two-letter subtags after singletons' do
+      expect(described_class.bcp47(:'EN-en-x-zA-fo-y-Ra')).to eql(:'en-EN-x-za-FO-y-ra')
+    end
+
+    it 'handles four-letter subtags after singletons' do
+      expect(described_class.bcp47('EN-inTL-x-extR-tags-y-moRe')).to eql(:'en-Intl-x-extr-Tags-y-more')
+    end
+
+    it 'handles non-2/4-letter subtags' do
+      expect(described_class.bcp47(:'EN-enG-intl-heLLo-za')).to eql(:'en-eng-Intl-hello-ZA')
+    end
+  end
 end
