@@ -35,7 +35,7 @@ AcceptLanguage.parse('da, en-gb;q=0.8, en;q=0.7')                     # => {:da=
 AcceptLanguage.parse('fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5')  # => {:"fr-ch"=>1.0, :fr=>0.9, :en=>0.8, :de=>0.7, :*=>0.5}
 ```
 
-In order to help facilitate better i18n, a method is provided to return the intersection of the languages the user prefers and the languages your application supports. Two letter truncation is enabled by default and truncates both the input language tags and available language tags to 2 characters for a broadly permissive match; both `en` and `en-GB` will match _any_ collection including a language starting with `en`, including e.g. `en-NZ`. If this is disabled, full tag matches are tried first, so `en-GB` would only match `en-GB` and not `en-NZ`.
+In order to help facilitate better i18n, a method is provided to return the intersection of the languages the user prefers and the languages your application supports. Two letter truncation is enabled by default and truncates both the input language tags and available language tags to 2 characters for a broadly permissive match; both `en` and `en-GB` will match _any_ collection containing a language starting with `en`, including e.g. `en-NZ`. If this is disabled, full tag matches are required, so `en-GB` would only match `en-GB` and not `en-NZ`.
 
 Examples:
 
@@ -52,6 +52,8 @@ AcceptLanguage.intersection('de, zh;q=0.4, *;q=0.5, fr;q=0', :ar)          # => 
 The returned capitalisation of the list of supported languages/tags is always preserved, though the return value will always be a Symbol or `nil`. This is important for Rails (see below) since `I18n.locale = ...` is case-sensitive. If you need it, you can specify option `enforce_bcp47: true` to enforce [BCP 47](https://tools.ietf.org/html/bcp47#section-2.1.1) capitalisation rules for returned matches instead.
 
 ### Rails integration example
+
+In most cases, you will probably want to try a strict match followed by a permissive match, dropping to default locale if all else fails.
 
 ```ruby
 # app/controllers/application_controller.rb
