@@ -1,0 +1,6 @@
+versions:
+  - rubocop-performance
+  - rubocop-thread_safety
+
+rubocop_fail_level: 'warning'
+check_scope: 'modified'

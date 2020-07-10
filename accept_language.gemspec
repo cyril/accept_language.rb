@@ -3,27 +3,20 @@
 Gem::Specification.new do |spec|
   spec.name          = 'accept_language'
   spec.version       = File.read('VERSION.semver').chomp
-  spec.authors       = ['Cyril Kato']
-  spec.email         = ['contact@cyril.email']
-
+  spec.author        = 'Cyril Kato'
+  spec.email         = 'contact@cyril.email'
   spec.summary       = 'Parser for Accept-Language request HTTP header'
   spec.description   = 'Parses the Accept-Language header from an HTTP ' \
                        'request and produces a hash of languages and qualities.'
   spec.homepage      = 'https://github.com/cyril/accept_language.rb'
   spec.license       = 'MIT'
+  spec.files         = Dir['LICENSE.md', 'README.md', 'lib/**/*']
 
-  spec.files         = Dir.chdir(File.expand_path(__dir__)) do
-    `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^spec/}) }
-  end
-
-  spec.bindir        = 'exe'
-  spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
-  spec.require_paths = ['lib']
-
-  spec.add_development_dependency 'bundler',    '~> 2.0'
-  spec.add_development_dependency 'rake',       '~> 12.3'
-  spec.add_development_dependency 'rspec',      '~> 3.8'
-  spec.add_development_dependency 'rubocop',    '~> 0.74'
-  spec.add_development_dependency 'simplecov',  '~> 0.17'
-  spec.add_development_dependency 'yard',       '~> 0.9'
+  spec.add_development_dependency 'bundler'
+  spec.add_development_dependency 'rake'
+  spec.add_development_dependency 'rspec'
+  spec.add_development_dependency 'rubocop-performance'
+  spec.add_development_dependency 'rubocop-thread_safety'
+  spec.add_development_dependency 'simplecov'
+  spec.add_development_dependency 'yard'
 end

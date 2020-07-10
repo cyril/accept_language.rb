@@ -1,0 +1,14 @@
+name: RuboCop
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: RuboCop Linter Action
+      uses: andrewmcodes/rubocop-linter-action@v3.2.0
+
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
