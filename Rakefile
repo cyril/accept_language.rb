@@ -17,4 +17,4 @@ namespace :spec do
 end
 
 task(:doc_stats) { ruby '-S yard stats' }
-task default: %i[spec doc_stats rubocop]
+task default: %i[spec doc_stats]
