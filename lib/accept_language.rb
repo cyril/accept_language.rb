@@ -15,4 +15,4 @@ module AcceptLanguage
   end
 end
 
-require_relative 'accept_language/intersection'
+require_relative "accept_language/intersection"

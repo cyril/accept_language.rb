@@ -7,7 +7,7 @@ module AcceptLanguage
   # @see https://tools.ietf.org/html/rfc2616#section-14.4
   module Parser
     def self.call(raw_input, two_letter_truncate: false)
-      raw_input.to_s.delete(' ').split(',').inject({}) do |hash, lang|
+      raw_input.to_s.delete(" ").split(",").inject({}) do |hash, lang|
         tag, quality = lang.split(/;q=/i)
         next hash if tag.nil?
 

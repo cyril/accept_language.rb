@@ -55,4 +55,4 @@ module AcceptLanguage
   end
 end
 
-require_relative 'parser'
+require_relative "parser"

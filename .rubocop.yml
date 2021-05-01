@@ -1,80 +1,33 @@
 inherit_from: .rubocop_todo.yml
 
+AllCops:
+  NewCops: enable
+  TargetRubyVersion: 2.7
+
 require:
   - rubocop-performance
+  - rubocop-md
+  - rubocop-rake
+  - rubocop-rspec
   - rubocop-thread_safety
 
-Layout/EmptyLinesAroundAttributeAccessor:
+# Enforcing double quotes reduces the times where you need to switch to Crystal.
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+# We do not need to support Ruby 1.9, so this is good to use.
+Style/SymbolArray:
   Enabled: true
 
-Layout/SpaceAroundMethodCallOperator:
-  Enabled: true
+# Most readable form.
+Layout/HashAlignment:
+  EnforcedHashRocketStyle: table
+  EnforcedColonStyle: table
 
-Lint/RaiseException:
-  Enabled: true
+# Check with yard instead.
+Style/Documentation:
+  Enabled: false
 
-Lint/DeprecatedOpenSSLConstant:
-  Enabled: true
-
-Lint/MixedRegexpCaptureTypes:
-  Enabled: true
-
-Lint/StructNewOverride:
-  Enabled: true
-
-Style/ExponentialNotation:
-  Enabled: true
-
-Style/SlicingWithRange:
-  Enabled: true
-
-Style/RedundantRegexpCharacterClass:
-  Enabled: true
-
-Style/RedundantRegexpEscape:
-  Enabled: true
-
-Style/HashEachMethods:
-  Enabled: true
-
-Style/HashTransformKeys:
-  Enabled: true
-
-Style/HashTransformValues:
-  Enabled: true
-
-Style/RedundantFetchBlock:
-  Enabled: true
-
-Performance/AncestorsInclude:
-  Enabled: true
-
-Performance/BigDecimalWithNumericArgument:
-  Enabled: true
-
-Performance/RedundantSortBlock:
-  Enabled: true
-
-Performance/RedundantStringChars:
-  Enabled: true
-
-Performance/ReverseFirst:
-  Enabled: true
-
-Performance/SortReverse:
-  Enabled: true
-
-Performance/Squeeze:
-  Enabled: true
-
-Performance/StringInclude:
-  Enabled: true
-
-Style/AccessorGrouping:
-  Enabled: true
-
-Style/BisectedAttrAccessor:
-  Enabled: true
-
-Style/RedundantAssignment:
-  Enabled: true
+Layout/LineLength:
+  Exclude:
+    - README.md
