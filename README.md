@@ -28,25 +28,24 @@ Or install it yourself as:
 
 It's intended to be used in a Web server that supports some level of internationalization (i18n), but can be used anytime an `Accept-Language` header string is available.
 
-Examples:
+In order to help facilitate better i18n, the lib try to find the intersection of the languages the user prefers and the languages your application supports.
+
+Some examples:
 
 ```ruby
-AcceptLanguage.parse("da, en-gb;q=0.8, en;q=0.7")                     # => {:da=>1.0, :"en-gb"=>0.8, :en=>0.7}
-AcceptLanguage.parse("fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5")  # => {:"fr-ch"=>1.0, :fr=>0.9, :en=>0.8, :de=>0.7, :*=>0.5}
-```
-
-In order to help facilitate better i18n, a method is provided to return the intersection of the languages the user prefers and the languages your application supports.
-
-Examples:
-
-```ruby
-AcceptLanguage.intersection("da, en-gb;q=0.8, en;q=0.7", :ja, :ro, :da) # => :da
-AcceptLanguage.intersection("da, en-gb;q=0.8, en;q=0.7", :ja, :ro)      # => nil
-AcceptLanguage.intersection("fr-CH", :fr, two_letter_truncate: false)   # => nil
-AcceptLanguage.intersection("fr-CH", :fr, two_letter_truncate: true)    # => :fr
-AcceptLanguage.intersection("de, zh;q=0.4, fr;q=0", :fr)                # => nil
-AcceptLanguage.intersection("de, zh;q=0.4, *;q=0.5, fr;q=0", :fr)       # => nil
-AcceptLanguage.intersection("de, zh;q=0.4, *;q=0.5, fr;q=0", :ar)       # => :ar
+AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7").match(:en, :da)       # => :da
+AcceptLanguage.parse("da, en;q=0.8, ug;q=0.9").match("en-GB", "ug-CN")  # => "ug-CN"
+AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7").match(:ja)            # => nil
+AcceptLanguage.parse("fr-CH").match(:fr)                                # => nil
+AcceptLanguage.parse("de, zh;q=0.4, fr;q=0").match(:fr)                 # => nil
+AcceptLanguage.parse("de, zh;q=0.4, *;q=0.5, fr;q=0").match(:ar)        # => :ar
+AcceptLanguage.parse("uz-latn-uz").match("uz-Latn-UZ")                  # => "uz-Latn-UZ"
+AcceptLanguage.parse("foo;q=0.1").match(:FoO)                           # => :FoO
+AcceptLanguage.parse("foo").match("bar")                                # => nil
+AcceptLanguage.parse("*").match("BaZ")                                  # => "BaZ"
+AcceptLanguage.parse("*;q=0").match("foobar")                           # => nil
+AcceptLanguage.parse("en, en;q=0").match("en")                          # => nil
+AcceptLanguage.parse("*, en;q=0").match("en")                           # => nil
 ```
 
 ### Rails integration example
@@ -64,7 +63,7 @@ class ApplicationController < ActionController::Base
     return I18n.default_locale unless request.headers.key?("HTTP_ACCEPT_LANGUAGE")
 
     string = request.headers.fetch("HTTP_ACCEPT_LANGUAGE")
-    locale = AcceptLanguage.intersection(string, I18n.default_locale, *I18n.available_locales)
+    locale = AcceptLanguage.parse(string).match(*I18n.available_locales)
 
     # If the server cannot serve any matching language,
     # it can theoretically send back a 406 (Not Acceptable) error code.

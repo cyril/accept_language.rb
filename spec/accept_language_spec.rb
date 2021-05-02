@@ -1,21 +1,11 @@
 # frozen_string_literal: true
 
 RSpec.describe AcceptLanguage do
-  let(:raw_input) { "da, en-gb;q=0.8, en;q=0.7" }
+  let(:field) { "da, en-GB;q=0.8, en;q=0.7" }
 
   describe ".parse" do
-    it "returns a hash of tags with their respective quality" do
-      actual = described_class.parse(raw_input)
-      expect(actual).to eq(da: 1.0, 'en-gb': 0.8, en: 0.7)
-    end
-  end
-
-  describe ".intersection" do
-    let(:supported_langs) { %i[en ko] }
-
-    it "returns the more appropriate language" do
-      actual = described_class.intersection(raw_input, *supported_langs)
-      expect(actual).to be :en
+    it "returns an instance of parser" do
+      expect(described_class.parse(field)).to be_an_instance_of AcceptLanguage::Parser
     end
   end
 end
