@@ -8,6 +8,14 @@ A tiny library for parsing the `Accept-Language` header from browsers (as define
 [![Build Status](https://travis-ci.org/cyril/accept_language.rb.svg?branch=main)](https://travis-ci.org/cyril/accept_language.rb)
 [![Inline Docs](https://inch-ci.org/github/cyril/accept_language.rb.svg)](https://inch-ci.org/github/cyril/accept_language.rb)
 
+## Why this tool?
+
+- Thread-safe implementation.
+- Small algorithm that can handle tricky cases.
+- Match strings and symbols ignoring the case.
+- Works also well without Rails, Rack, i18n.
+- Comes with [BCP 47](https://www.rfc-editor.org/bcp/bcp47.txt) support.
+
 ## Installation
 
 Add this line to your application's Gemfile:
