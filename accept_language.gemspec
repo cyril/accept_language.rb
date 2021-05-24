@@ -5,7 +5,7 @@ Gem::Specification.new do |spec|
   spec.version       = File.read("VERSION.semver").chomp
   spec.author        = "Cyril Kato"
   spec.email         = "contact@cyril.email"
-  spec.summary       = "Parser for Accept-Language request HTTP header"
+  spec.summary       = "Parser for Accept-Language request HTTP header 🌐"
   spec.description   = "Parses the Accept-Language header from an HTTP " \
                        "request and produces a hash of languages and qualities."
   spec.homepage      = "https://github.com/cyril/accept_language.rb"

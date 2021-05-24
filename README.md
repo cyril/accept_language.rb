@@ -1,4 +1,4 @@
-# Accept Language
+# Accept Language 🌐
 
 A tiny library for parsing the `Accept-Language` header from browsers (as defined in [RFC 2616](https://tools.ietf.org/html/rfc2616#section-14.4)).
 
