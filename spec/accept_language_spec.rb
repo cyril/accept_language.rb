@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "spec_helper"
+
 RSpec.describe AcceptLanguage do
   let(:field) { "da, en-GB;q=0.8, en;q=0.7" }
 

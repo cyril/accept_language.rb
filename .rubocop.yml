@@ -31,3 +31,6 @@ Style/Documentation:
 Layout/LineLength:
   Exclude:
     - README.md
+
+RSpec/ExampleLength:
+  Max: 7

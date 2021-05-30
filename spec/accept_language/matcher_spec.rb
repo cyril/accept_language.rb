@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative File.join("..", "spec_helper")
+
 RSpec.describe AcceptLanguage::Matcher do
   let(:matcher) do
     described_class.new(**AcceptLanguage::Parser.new(field).languages_range)

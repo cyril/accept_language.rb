@@ -1,14 +1,20 @@
 # frozen_string_literal: true
 
+require_relative File.join("..", "spec_helper")
+
 RSpec.describe AcceptLanguage::Parser do
   describe "#languages_range" do
-    subject(:parser) { described_class.new(raw_input) }
+    let(:parser) { described_class.new(raw_input) }
 
     context "without a wildcard" do
       let(:raw_input) { "da, en-GB;q=0.8, en;q=0.7" }
 
       it "returns languages range" do
-        expect(parser.languages_range).to eq("da" => 1.0, "en-GB" => 0.8, "en" => 0.7)
+        expect(parser.languages_range).to eq(
+          "da"    => BigDecimal("1.0"),
+          "en-GB" => BigDecimal("0.8"),
+          "en"    => BigDecimal("0.7")
+        )
       end
 
       describe "#match" do
@@ -42,7 +48,13 @@ RSpec.describe AcceptLanguage::Parser do
       let(:raw_input) { "fr, fr-CH;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5" }
 
       it "returns languages range" do
-        expect(parser.languages_range).to eq("fr" => 1.0, "fr-CH" => 0.9, "en" => 0.8, "de" => 0.7, "*" => 0.5)
+        expect(parser.languages_range).to eq(
+          "fr"    => BigDecimal("1.0"),
+          "fr-CH" => BigDecimal("0.9"),
+          "en"    => BigDecimal("0.8"),
+          "de"    => BigDecimal("0.7"),
+          "*"     => BigDecimal("0.5")
+        )
       end
 
       describe "#match" do

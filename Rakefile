@@ -1,22 +1,17 @@
 # frozen_string_literal: true
 
 require "bundler/gem_tasks"
-
+require "rake/testtask"
 require "rubocop/rake_task"
-RuboCop::RakeTask.new
-
-require "rspec/core/rake_task"
-RSpec::Core::RakeTask.new(:spec)
-
 require "yard"
-YARD::Rake::YardocTask.new
 
-namespace :test do
-  desc "Code coverage"
-  task :coverage do
-    ENV["COVERAGE"] = "true"
-    Rake::Task["test"].invoke
-  end
+Rake::TestTask.new do |t|
+  t.pattern = "spec/**/*_spec.rb"
+  t.verbose = true
+  t.warning = true
 end
 
-task default: %i[yard rubocop:auto_correct spec]
+RuboCop::RakeTask.new
+YARD::Rake::YardocTask.new
+
+task default: %i[rubocop:auto_correct test yard]
