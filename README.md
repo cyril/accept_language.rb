@@ -6,7 +6,7 @@ A tiny library for parsing the `Accept-Language` header from browsers (as define
 
 [![Gem Version](https://badge.fury.io/rb/accept_language.svg)](https://badge.fury.io/rb/accept_language)
 [![Build Status](https://travis-ci.org/cyril/accept_language.rb.svg?branch=main)](https://travis-ci.org/cyril/accept_language.rb)
-[![Inline Docs](https://inch-ci.org/github/cyril/accept_language.rb.svg)](https://inch-ci.org/github/cyril/accept_language.rb)
+[![Documentation](http://img.shields.io/:yard-docs-38c800.svg)](https://rubydoc.info/gems/accept_language/frames)
 
 ## Why this tool?
 
