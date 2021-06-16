@@ -26,11 +26,15 @@ gem "accept_language"
 
 And then execute:
 
-    $ bundle
+```sh
+bundle
+```
 
 Or install it yourself as:
 
-    $ gem install accept_language
+```sh
+gem install accept_language
+```
 
 ## Usage
 
