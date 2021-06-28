@@ -11,17 +11,18 @@ GEM
     defi (2.0.5)
       aw (~> 0.1.12)
     docile (1.4.0)
-    expresenter (1.2.1)
+    expresenter (1.3.0)
     matchi (2.1.0)
     matchi-rspec (1.1.2)
       matchi (~> 2.1.0)
     parallel (1.20.1)
     parser (3.0.1.1)
       ast (~> 2.4.1)
-    r_spec (1.0.0.beta7)
-      expresenter (~> 1.2.1)
+    r_spec-clone (1.0.2)
+      aw (~> 0.1.12)
+      expresenter (~> 1.3.0)
       matchi-rspec (~> 1.1.2)
-      spectus (~> 3.3.4)
+      test_tube (~> 1.1.0)
     rainbow (3.0.0)
     rake (13.0.3)
     regexp_parser (2.1.1)
@@ -56,10 +57,8 @@ GEM
       simplecov_json_formatter (~> 0.1)
     simplecov-html (0.12.3)
     simplecov_json_formatter (0.1.3)
-    spectus (3.3.4)
+    test_tube (1.1.0)
       defi (~> 2.0.5)
-      expresenter (~> 1.2.1)
-      matchi (~> 2.1.0)
     unicode-display_width (2.0.0)
     yard (0.9.26)
 
@@ -69,7 +68,7 @@ PLATFORMS
 DEPENDENCIES
   accept_language!
   bundler
-  r_spec (= 1.0.0.beta7)
+  r_spec-clone
   rake
   rubocop-md
   rubocop-performance
