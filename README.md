@@ -4,9 +4,11 @@ A tiny library for parsing the `Accept-Language` header from browsers (as define
 
 ## Status
 
-[![Gem Version](https://badge.fury.io/rb/accept_language.svg)](https://badge.fury.io/rb/accept_language)
-[![Build Status](https://travis-ci.org/cyril/accept_language.rb.svg?branch=main)](https://travis-ci.org/cyril/accept_language.rb)
-[![Documentation](http://img.shields.io/:yard-docs-38c800.svg)](https://rubydoc.info/gems/accept_language/frames)
+[![Version](https://img.shields.io/github/v/tag/cyril/accept_language.rb?label=Version&logo=github)](https://github.com/cyril/accept_language.rb/releases)
+[![Yard documentation](https://img.shields.io/badge/Yard-documentation-blue.svg?logo=github)](https://rubydoc.info/github/cyril/accept_language.rb/main)
+[![CI](https://github.com/cyril/accept_language.rb/workflows/CI/badge.svg?branch=main)](https://github.com/cyril/accept_language.rb/actions?query=workflow%3Aci+branch%3Amain)
+[![RuboCop](https://github.com/cyril/accept_language.rb/workflows/RuboCop/badge.svg?branch=main)](https://github.com/cyril/accept_language.rb/actions?query=workflow%3Arubocop+branch%3Amain)
+[![License](https://img.shields.io/github/license/cyril/accept_language.rb?label=License&logo=github)](https://github.com/cyril/accept_language.rb/raw/main/LICENSE.md)
 
 ## Why this tool?
 
