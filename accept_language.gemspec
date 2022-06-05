@@ -9,9 +9,10 @@ Gem::Specification.new do |spec|
   spec.description   = "Parses the Accept-Language header from an HTTP " \
                        "request and produces a hash of languages and qualities."
   spec.homepage      = "https://github.com/cyril/accept_language.rb"
-  spec.required_ruby_version = ::Gem::Requirement.new(">= 2.7.5")
   spec.license       = "MIT"
   spec.files         = Dir["LICENSE.md", "README.md", "lib/**/*"]
+
+  spec.required_ruby_version = ">= 2.7.6"
 
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake"

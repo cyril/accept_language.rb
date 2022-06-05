@@ -286,21 +286,5 @@ RSpec.describe AcceptLanguage::Matcher do
         expect(best_match).to eq :"en-NZ"
       end
     end
-
-    context "when the corresponding language is a string" do
-      let(:available_langtag) { "en-NZ" }
-
-      it "preserves type" do
-        expect(best_match).to eq "en-NZ"
-      end
-    end
-
-    context "when the corresponding language is a symbol" do
-      let(:available_langtag) { :"en-NZ" }
-
-      it "preserves type" do
-        expect(best_match).to eq :"en-NZ"
-      end
-    end
   end
 end

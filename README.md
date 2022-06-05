@@ -29,7 +29,7 @@ gem "accept_language"
 And then execute:
 
 ```sh
-bundle
+bundle install
 ```
 
 Or install it yourself as:
