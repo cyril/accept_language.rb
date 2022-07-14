@@ -90,6 +90,11 @@ class ApplicationController < ActionController::Base
 end
 ```
 
+## Read more
+
+* [Language negotiation with Ruby](https://dev.to/cyri_/language-negotiation-with-ruby-5166)
+* [Rubyで、言語交渉](https://qiita.com/cyril/items/45dc233edb7be9d614e7)
+
 ## Versioning
 
 __AcceptLanguage__ uses [Semantic Versioning 2.0.0](https://semver.org/)
