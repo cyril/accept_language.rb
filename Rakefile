@@ -15,7 +15,7 @@ RuboCop::RakeTask.new
 YARD::Rake::YardocTask.new
 
 task default: %i[
-  rubocop:auto_correct
+  rubocop:autocorrect
   test
   yard
 ]
