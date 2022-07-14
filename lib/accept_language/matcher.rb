@@ -8,17 +8,19 @@ module AcceptLanguage
   #   Matcher.new("da" => 1.0, "en-GB" => 0.8, "en" => 0.7).call(:ug, :kk, :ru, :en) # => :en
   #   Matcher.new("da" => 1.0, "en-GB" => 0.8, "en" => 0.7).call(:fr, :en, :"en-GB") # => :"en-GB"
   class Matcher
+    WILDCARD = "*"
+
     attr_reader :excluded_langtags, :preferred_langtags
 
     # @param [Hash<String, BigDecimal>] languages_range A list of accepted
     #   languages with their respective qualities.
     def initialize(**languages_range)
-      @excluded_langtags = Set[]
+      @excluded_langtags = ::Set[]
       langtags = []
 
       languages_range.select do |langtag, quality|
         if quality.zero?
-          @excluded_langtags << langtag unless langtag.eql?("*")
+          @excluded_langtags << langtag unless wildcard?(langtag)
         else
           level = (quality * 1_000).to_i
           langtags[level] = langtag
@@ -37,7 +39,7 @@ module AcceptLanguage
       available_langtags = drop_unacceptable(*available_langtags)
 
       preferred_langtags.each do |preferred_tag|
-        if preferred_tag.eql?("*")
+        if wildcard?(preferred_tag)
           langtag = any_other_langtag(*available_langtags)
           return langtag unless langtag.nil?
         else
@@ -54,7 +56,7 @@ module AcceptLanguage
 
     def any_other_langtag(*available_langtags)
       available_langtags.find do |available_langtag|
-        langtags = preferred_langtags - ["*"]
+        langtags = preferred_langtags - [WILDCARD]
 
         langtags.none? do |langtag|
           available_langtag.match?(/\A#{langtag}/i)
@@ -63,10 +65,10 @@ module AcceptLanguage
     end
 
     def drop_unacceptable(*available_langtags)
-      available_langtags.inject(Set[]) do |langtags, available_langtag|
+      available_langtags.inject(::Set[]) do |langtags, available_langtag|
         next langtags if unacceptable?(available_langtag)
 
-        langtags + Set[available_langtag]
+        langtags + ::Set[available_langtag]
       end
     end
 
@@ -74,6 +76,10 @@ module AcceptLanguage
       excluded_langtags.any? do |excluded_langtag|
         langtag.match?(/\A#{excluded_langtag}/i)
       end
+    end
+
+    def wildcard?(value)
+      value.eql?(WILDCARD)
     end
   end
 end

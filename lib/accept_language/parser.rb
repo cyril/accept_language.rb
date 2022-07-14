@@ -1,11 +1,18 @@
 # frozen_string_literal: true
 
+require "bigdecimal"
+
 module AcceptLanguage
   # @note Parser for Accept-Language header fields.
   # @example
   #   Parser.new("da, en-GB;q=0.8, en;q=0.7") # => #<AcceptLanguage::Parser:0x00007 @languages_range={"da"=>0.1e1, "en-GB"=>0.8e0, "en"=>0.7e0}>
   # @see https://tools.ietf.org/html/rfc2616#section-14.4
   class Parser
+    DEFAULT_QUALITY = BigDecimal("1")
+    SEPARATOR = ","
+    SPACE = " "
+    SUFFIX = ";q="
+
     attr_reader :languages_range
 
     # @param [String] field The Accept-Language header field to parse.
@@ -30,16 +37,15 @@ module AcceptLanguage
     # @return [Hash<String, BigDecimal>] A list of accepted languages with their
     #   respective qualities.
     def import(field)
-      field.delete(" ").split(",").inject({}) do |hash, lang|
-        tag, quality = lang.split(/;q=/i)
+      field.delete(SPACE).split(SEPARATOR).inject({}) do |hash, lang|
+        tag, quality = lang.split(SUFFIX)
         next hash if tag.nil?
 
-        quality = quality.nil? ? BigDecimal("1") : BigDecimal(quality)
+        quality = quality.nil? ? DEFAULT_QUALITY : BigDecimal(quality)
         hash.merge(tag => quality)
       end
     end
   end
 end
 
-require "bigdecimal"
 require_relative "matcher"

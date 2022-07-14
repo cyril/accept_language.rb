@@ -14,4 +14,4 @@ module AcceptLanguage
   end
 end
 
-require_relative "accept_language/parser"
+require_relative File.join("accept_language", "parser")
