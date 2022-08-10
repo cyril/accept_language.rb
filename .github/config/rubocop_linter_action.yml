@@ -1,4 +1,5 @@
 versions:
+  - rubocop-gitlab-security
   - rubocop-md
   - rubocop-performance
   - rubocop-rake

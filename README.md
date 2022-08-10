@@ -4,9 +4,9 @@ A tiny library for parsing the `Accept-Language` header from browsers (as define
 
 ## Status
 
-[![Version](https://img.shields.io/github/v/tag/cyril/accept_language.rb?label=Version&logo=github)](https://github.com/cyril/accept_language.rb/releases)
+[![Version](https://img.shields.io/github/v/tag/cyril/accept_language.rb?label=Version&logo=github)](https://github.com/cyril/accept_language.rb/tags)
 [![Yard documentation](https://img.shields.io/badge/Yard-documentation-blue.svg?logo=github)](https://rubydoc.info/github/cyril/accept_language.rb/main)
-[![CI](https://github.com/cyril/accept_language.rb/workflows/CI/badge.svg?branch=main)](https://github.com/cyril/accept_language.rb/actions?query=workflow%3Aci+branch%3Amain)
+[![Ruby](https://github.com/cyril/accept_language.rb/workflows/Ruby/badge.svg?branch=main)](https://github.com/cyril/accept_language.rb/actions?query=workflow%3Aruby+branch%3Amain)
 [![RuboCop](https://github.com/cyril/accept_language.rb/workflows/RuboCop/badge.svg?branch=main)](https://github.com/cyril/accept_language.rb/actions?query=workflow%3Arubocop+branch%3Amain)
 [![License](https://img.shields.io/github/license/cyril/accept_language.rb?label=License&logo=github)](https://github.com/cyril/accept_language.rb/raw/main/LICENSE.md)
 
@@ -92,8 +92,8 @@ end
 
 ## Read more
 
-* [Language negotiation with Ruby](https://dev.to/cyri_/language-negotiation-with-ruby-5166)
-* [Rubyで言語ネゴシエーション](https://qiita.com/cyril/items/45dc233edb7be9d614e7)
+- [Language negotiation with Ruby](https://dev.to/cyri_/language-negotiation-with-ruby-5166)
+- [Rubyで言語ネゴシエーション](https://qiita.com/cyril/items/45dc233edb7be9d614e7)
 
 ## Versioning
 
