@@ -11,7 +11,15 @@ Rake::TestTask.new do |t|
   t.warning = true
 end
 
-RuboCop::RakeTask.new
+RuboCop::RakeTask.new do |task|
+  task.requires << "rubocop-gitlab-security"
+  task.requires << "rubocop-md"
+  task.requires << "rubocop-performance"
+  task.requires << "rubocop-rake"
+  task.requires << "rubocop-rspec"
+  task.requires << "rubocop-thread_safety"
+end
+
 YARD::Rake::YardocTask.new
 
 task default: %i[

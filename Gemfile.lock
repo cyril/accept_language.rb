@@ -40,6 +40,8 @@ GEM
       unicode-display_width (>= 1.4.0, < 3.0)
     rubocop-ast (1.21.0)
       parser (>= 3.1.1.0)
+    rubocop-gitlab-security (0.1.1)
+      rubocop (>= 0.51)
     rubocop-md (1.0.1)
       rubocop (>= 1.0)
     rubocop-performance (1.14.3)
@@ -73,6 +75,7 @@ DEPENDENCIES
   bundler
   r_spec
   rake
+  rubocop-gitlab-security
   rubocop-md
   rubocop-performance
   rubocop-rake

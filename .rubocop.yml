@@ -3,6 +3,7 @@ AllCops:
   TargetRubyVersion: 2.7
 
 require:
+  - rubocop-gitlab-security
   - rubocop-md
   - rubocop-performance
   - rubocop-rake
