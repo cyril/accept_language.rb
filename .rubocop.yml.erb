@@ -1,25 +1,9 @@
 AllCops:
   # @see https://docs.rubocop.org/rubocop/configuration.html#pre-processing
   Exclude:
-  
-    - .rubocop-https---raw-githubusercontent-com-sashite-sashite-rubocop-rb-v1-0-3-config-rubocop-performance-yml
-  
-    - .rubocop-https---raw-githubusercontent-com-sashite-sashite-rubocop-rb-v1-0-3-config-rubocop-rake-yml
-  
-    - .rubocop-https---raw-githubusercontent-com-sashite-sashite-rubocop-rb-v1-0-3-config-rubocop-rspec-yml
-  
-    - .rubocop-https---raw-githubusercontent-com-sashite-sashite-rubocop-rb-v1-0-3-config-rubocop-thread-safety-yml
-  
-    - .rubocop-https---raw-githubusercontent-com-sashite-sashite-rubocop-rb-v1-0-3-config-rubocop-yml
-  
-    - .yardoc/
-  
-    - coverage/
-  
-    - doc/
-  
-    - pkg/
-  
+  <% `git status --ignored --porcelain`.lines.grep(/^!! /).each do |path| %>
+    - <%= path.sub(/^!! /, "").gsub(/\n/, "") %>
+  <% end %>
 
   NewCops: enable
   TargetRubyVersion: 2.7
