@@ -16,8 +16,6 @@ Whether you're building a multilingual web application or just trying to make yo
 [![RuboCop](https://github.com/cyril/accept_language.rb/workflows/RuboCop/badge.svg?branch=main)](https://github.com/cyril/accept_language.rb/actions?query=workflow%3Arubocop+branch%3Amain)
 [![License](https://img.shields.io/github/license/cyril/accept_language.rb?label=License&logo=github)](https://github.com/cyril/accept_language.rb/raw/main/LICENSE.md)
 
-## Why this tool?
-
 ## Why Choose Accept Language?
 
 There are a myriad of tools out there, so why should you consider Accept Language for your next project? Here's why:
