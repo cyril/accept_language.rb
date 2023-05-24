@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
 module AcceptLanguage
-  # @note Compare an Accept-Language header value with your application's
-  #   supported languages to find the common languages that could be presented
-  #   to a user.
+  # A utility class that provides functionality to match the Accept-Language header value
+  # against the languages supported by your application. This helps in identifying the most
+  # suitable languages to present to the user based on their preferences.
+  #
   # @example
   #   Matcher.new("da" => 1.0, "en-GB" => 0.8, "en" => 0.7).call(:ug, :kk, :ru, :en) # => :en
   #   Matcher.new("da" => 1.0, "en-GB" => 0.8, "en" => 0.7).call(:fr, :en, :"en-GB") # => :"en-GB"
@@ -12,8 +13,11 @@ module AcceptLanguage
 
     attr_reader :excluded_langtags, :preferred_langtags
 
-    # @param [Hash<String, BigDecimal>] languages_range A list of accepted
-    #   languages with their respective qualities.
+    # Initialize a new Matcher object with the languages_range parameter representing the user's
+    # preferred languages and their respective quality values.
+    #
+    # @param [Hash<String, BigDecimal>] languages_range A hash where keys represent languages and
+    #   values are the quality of preference for each language. A value of zero means the language is not acceptable.
     def initialize(**languages_range)
       @excluded_langtags = ::Set[]
       langtags = []
@@ -30,11 +34,15 @@ module AcceptLanguage
       @preferred_langtags = langtags.compact.reverse
     end
 
-    # @param [Array<String, Symbol>] available_langtags The list of available
-    #   languages.
-    # @example Uyghur, Kazakh, Russian and English languages are available.
+    # Matches the user's preferred languages against the available languages of your application.
+    # It prioritizes higher quality values and returns the most suitable match.
+    #
+    # @param [Array<String, Symbol>] available_langtags An array representing the languages available in your application.
+    #
+    # @example When Uyghur, Kazakh, Russian and English languages are available.
     #   call(:ug, :kk, :ru, :en)
-    # @return [String, Symbol, nil] The language that best matches.
+    #
+    # @return [String, Symbol, nil] The language that best matches the user's preferences, or nil if there is no match.
     def call(*available_langtags)
       available_langtags = drop_unacceptable(*available_langtags)
 

@@ -3,10 +3,14 @@
 require "bigdecimal"
 
 module AcceptLanguage
-  # @note Parser for Accept-Language header fields.
+  # Parser is a utility class responsible for parsing Accept-Language header fields.
+  # It processes the field to extract language tags and their respective quality values.
+  #
   # @example
-  #   Parser.new("da, en-GB;q=0.8, en;q=0.7") # => #<AcceptLanguage::Parser:0x00007 @languages_range={"da"=>0.1e1, "en-GB"=>0.8e0, "en"=>0.7e0}>
-  # @see https://tools.ietf.org/html/rfc2616#section-14.4
+  #   Parser.new("da, en-GB;q=0.8, en;q=0.7")
+  #   # => #<AcceptLanguage::Parser:0x00007 @languages_range={"da"=>1.0, "en-GB"=>0.8, "en"=>0.7}>
+  #
+  # @see https://tools.ietf.org/html/rfc2616#section-14.4 for more information on Accept-Language header fields.
   class Parser
     DEFAULT_QUALITY = BigDecimal("1")
     SEPARATOR = ","
@@ -15,27 +19,34 @@ module AcceptLanguage
 
     attr_reader :languages_range
 
+    # Initializes a new Parser instance by importing and processing the given Accept-Language header field.
+    #
     # @param [String] field The Accept-Language header field to parse.
-    # @see https://tools.ietf.org/html/rfc2616#section-14.4
     def initialize(field)
       @languages_range = import(field)
     end
 
-    # @param [Array<String, Symbol>] available_langtags The list of available
-    #   languages.
-    # @example Uyghur, Kazakh, Russian and English languages are available.
+    # Uses the Matcher class to find the best language match from the list of available languages.
+    #
+    # @param [Array<String, Symbol>] available_langtags An array of language tags that are available for matching.
+    #
+    # @example When Uyghur, Kazakh, Russian and English languages are available.
     #   match(:ug, :kk, :ru, :en)
-    # @return [String, Symbol, nil] The language that best matches.
+    #
+    # @return [String, Symbol, nil] The language tag that best matches the parsed languages from the Accept-Language header, or nil if no match found.
     def match(*available_langtags)
       Matcher.new(**languages_range).call(*available_langtags)
     end
 
     private
 
+    # Processes the Accept-Language header field to extract language tags and their respective quality values.
+    #
     # @example
-    #   import('da, en-GB;q=0.8, en;q=0.7') # => {"da"=>0.1e1, "en-GB"=>0.8e0, "en"=>0.7e0}
-    # @return [Hash<String, BigDecimal>] A list of accepted languages with their
-    #   respective qualities.
+    #   import('da, en-GB;q=0.8, en;q=0.7')
+    #   # => {"da"=>1.0, "en-GB"=>0.8, "en"=>0.7}
+    #
+    # @return [Hash<String, BigDecimal>] A hash where keys represent language tags and values are their respective quality values.
     def import(field)
       field.delete(SPACE).split(SEPARATOR).inject({}) do |hash, lang|
         tag, quality = lang.split(SUFFIX)

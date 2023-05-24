@@ -1,6 +1,12 @@
 # Accept Language 🌐
 
-A tiny library for parsing the `Accept-Language` header from browsers (as defined in [RFC 2616](https://tools.ietf.org/html/rfc2616#section-14.4)).
+Web applications often need to cater to users from around the world. One of the ways they can provide a better user experience is by presenting the content in the user's preferred language. This is where the `Accept-Language` HTTP header comes into play. Sent by the client (usually a web browser), this header tells the server the list of languages the user understands, and the user's preference order.
+
+Parsing the `Accept-Language` header can be complex due to its flexible format defined in [RFC 2616](https://tools.ietf.org/html/rfc2616#section-14.4). For instance, it can specify languages, countries, and scripts with varying degrees of preference (quality values).
+
+`Accept Language` is a lightweight, thread-safe Ruby library designed to parse the `Accept-Language` header, making it easier for your application to determine the best language to respond with. It calculates the intersection of the languages the user prefers and the languages your application supports, handling all the complexity of quality values and wildcards.
+
+Whether you're building a multilingual web application or just trying to make your service more accessible to users worldwide, `Accept Language` offers a reliable, simple solution.
 
 ## Status
 
@@ -12,11 +18,15 @@ A tiny library for parsing the `Accept-Language` header from browsers (as define
 
 ## Why this tool?
 
-- Thread-safe implementation.
-- Small algorithm that can handle tricky cases.
-- Match strings and symbols ignoring the case.
-- Works also well without Rails, Rack, i18n.
-- Comes with [BCP 47](https://www.rfc-editor.org/bcp/bcp47.txt) support.
+## Why Choose Accept Language?
+
+There are a myriad of tools out there, so why should you consider Accept Language for your next project? Here's why:
+
+- **Thread-Safe**: Multithreading can present unique challenges when dealing with shared resources. Our implementation is designed to be thread-safe, preventing potential concurrency issues.
+- **Compact and Robust**: Despite being small in size, Accept Language can handle even the trickiest cases with grace, ensuring you have a reliable tool at your disposal.
+- **Case-Insensitive Matching**: In line with the principle of robustness, our tool matches both strings and symbols regardless of case, providing greater flexibility.
+- **Independent of Framework**: While many tools require Rails, Rack, or i18n to function, Accept Language stands on its own. It works perfectly well without these dependencies, increasing its adaptability.
+- **BCP 47 Support**: BCP 47 defines a standard for language tags. This is crucial for specifying languages unambiguously. Accept Language complies with this standard, ensuring accurate language identification.
 
 ## Installation
 
@@ -40,27 +50,40 @@ gem install accept_language
 
 ## Usage
 
-It's intended to be used in a Web server that supports some level of internationalization (i18n), but can be used anytime an `Accept-Language` header string is available.
+`Accept Language` library is primarily designed to assist web servers in serving multilingual content based on user preferences expressed in the `Accept-Language` header. This library finds the best matching language from the available languages your application supports and the languages the user prefers.
 
-In order to help facilitate better i18n, the lib try to find the intersection of the languages the user prefers and the languages your application supports.
-
-Some examples:
+Below are some examples of how you might use the library:
 
 ```ruby
-AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7").match(:en, :da)       # => :da
-AcceptLanguage.parse("da, en;q=0.8, ug;q=0.9").match("en-GB", "ug-CN")  # => "ug-CN"
-AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7").match(:ja)            # => nil
-AcceptLanguage.parse("fr-CH").match(:fr)                                # => nil
-AcceptLanguage.parse("de, zh;q=0.4, fr;q=0").match(:fr)                 # => nil
-AcceptLanguage.parse("de, zh;q=0.4, *;q=0.5, fr;q=0").match(:ar)        # => :ar
-AcceptLanguage.parse("uz-latn-uz").match("uz-Latn-UZ")                  # => "uz-Latn-UZ"
-AcceptLanguage.parse("foo;q=0.1").match(:FoO)                           # => :FoO
-AcceptLanguage.parse("foo").match("bar")                                # => nil
-AcceptLanguage.parse("*").match("BaZ")                                  # => "BaZ"
-AcceptLanguage.parse("*;q=0").match("foobar")                           # => nil
-AcceptLanguage.parse("en, en;q=0").match("en")                          # => nil
-AcceptLanguage.parse("*, en;q=0").match("en")                           # => nil
+# The user prefers Danish, then British English, and finally any kind of English.
+# Since your application supports English and Danish, it selects Danish as it's the user's first choice.
+AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7").match(:en, :da) # => :da
+
+# The user prefers Danish, then English, and finally Uyghur. Your application supports British English and Chinese Uyghur.
+# Here, the library will return Chinese Uyghur because it's the highest ranked language in the user's list that your application supports.
+AcceptLanguage.parse("da, en;q=0.8, ug;q=0.9").match("en-GB", "ug-CN") # => "ug-CN"
+
+# The user prefers Danish, then British English, and finally any kind of English. Your application only supports Japanese.
+# Since none of the user's preferred languages are supported, it returns nil.
+AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7").match(:ja) # => nil
+
+# The user only accepts Swiss French, but your application only supports French. Since Swiss French and French are not the same, it returns nil.
+AcceptLanguage.parse("fr-CH").match(:fr) # => nil
+
+# The user prefers German, then any language except French. Your application supports French.
+# Even though the user specified a wildcard, they explicitly excluded French. Therefore, it returns nil.
+AcceptLanguage.parse("de, zh;q=0.4, *;q=0.5, fr;q=0").match(:fr) # => nil
+
+# The user prefers Uyghur (in Latin script, as used in Uzbekistan). Your application supports this exact variant of Uyghur.
+# Since the user's first choice matches a language your application supports, it returns that language.
+AcceptLanguage.parse("uz-latn-uz").match("uz-Latn-UZ") # => "uz-Latn-UZ"
+
+# The user doesn't mind what language they get, but they'd prefer not to have English. Your application supports English.
+# Even though the user specified a wildcard, they explicitly excluded English. Therefore, it returns nil.
+AcceptLanguage.parse("*, en;q=0").match("en") # => nil
 ```
+
+These examples show the flexibility and power of `Accept Language`. By giving your application a deep understanding of the user's language preferences, `Accept Language` can significantly improve user satisfaction and engagement with your application.
 
 ### Rails integration example
 
