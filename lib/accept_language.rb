@@ -23,7 +23,7 @@ module AcceptLanguage
   #
   # @return [Parser] a Parser object that responds to #match method.
   def self.parse(field)
-    Parser.new(field)
+    Parser.new(field.to_s)
   end
 end
 
