@@ -91,5 +91,3 @@ module AcceptLanguage
     end
   end
 end
-
-require "set"
