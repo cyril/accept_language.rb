@@ -18,6 +18,8 @@ AllCops:
   
     - doc/
   
+    - pkg/
+  
 
   NewCops: enable
   TargetRubyVersion: 3.2
@@ -57,4 +59,7 @@ RSpec/NestedGroups:
 
 # Check with yard instead.
 Style/Documentation:
+  Enabled: false
+
+Style/RedundantInterpolation:
   Enabled: false

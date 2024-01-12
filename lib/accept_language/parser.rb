@@ -48,7 +48,7 @@ module AcceptLanguage
     #
     # @return [Hash<String, BigDecimal>] A hash where keys represent language tags and values are their respective quality values.
     def import(field)
-      field.delete(SPACE).split(SEPARATOR).inject({}) do |hash, lang|
+      "#{field}".delete(SPACE).split(SEPARATOR).inject({}) do |hash, lang|
         tag, quality = lang.split(SUFFIX)
         next hash if tag.nil?
 

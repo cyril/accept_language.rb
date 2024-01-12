@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    accept_language (2.0.5)
+    accept_language (2.0.6)
 
 GEM
   remote: https://rubygems.org/
@@ -16,7 +16,7 @@ GEM
     language_server-protocol (3.17.0.3)
     matchi (3.3.1)
     parallel (1.24.0)
-    parser (3.3.0.2)
+    parser (3.3.0.3)
       ast (~> 2.4.1)
       racc
     r_spec (1.0.5)
