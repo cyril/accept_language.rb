@@ -43,7 +43,7 @@ bundle install
 Or install it yourself as:
 
 ```sh
-gem install accept_language
+bundle add accept_language
 ```
 
 ## Usage
