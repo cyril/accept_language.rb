@@ -16,6 +16,8 @@ module AcceptLanguage
     SEPARATOR = ","
     SPACE = " "
     SUFFIX = ";q="
+    ALLOWED_TAG_CHARS = ("a".."z").to_a + ("A".."Z").to_a + ("0".."9").to_a + ["-", "*"]
+    ALLOWED_QUALITY_CHARS = ("0".."9").to_a + ["."]
 
     attr_reader :languages_range
 
@@ -50,7 +52,10 @@ module AcceptLanguage
     def import(field)
       "#{field}".delete(SPACE).split(SEPARATOR).inject({}) do |hash, lang|
         tag, quality = lang.split(SUFFIX)
-        next hash if tag.nil?
+
+        invalid_tag = tag.nil? || (tag.chars - ALLOWED_TAG_CHARS).any?
+        invalid_quality = !quality.nil? && (quality.chars - ALLOWED_QUALITY_CHARS).any?
+        next hash if invalid_tag || invalid_quality
 
         quality = quality.nil? ? DEFAULT_QUALITY : BigDecimal(quality)
         hash.merge(tag => quality)
