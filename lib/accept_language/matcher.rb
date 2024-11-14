@@ -11,14 +11,15 @@ module AcceptLanguage
   class Matcher
     WILDCARD = "*"
 
-    attr_reader :excluded_langtags, :preferred_langtags
+    attr_reader :primary_fallback, :excluded_langtags, :preferred_langtags
 
     # Initialize a new Matcher object with the languages_range parameter representing the user's
     # preferred languages and their respective quality values.
     #
     # @param [Hash<String, BigDecimal>] languages_range A hash where keys represent languages and
     #   values are the quality of preference for each language. A value of zero means the language is not acceptable.
-    def initialize(**languages_range)
+    def initialize(primary_fallback: false, **languages_range)
+      @primary_fallback = primary_fallback
       @excluded_langtags = ::Set[]
       langtags = []
 
@@ -57,6 +58,13 @@ module AcceptLanguage
         end
       end
 
+      unless primary_langtags.empty?
+        available_langtags_strings = available_langtags.map(&:to_s)
+        primary_langtags.each do |primary_langtag|
+          return primary_langtag if available_langtags_strings.include?(primary_langtag)
+        end
+      end
+
       nil
     end
 
@@ -88,6 +96,20 @@ module AcceptLanguage
 
     def wildcard?(value)
       value.eql?(WILDCARD)
+    end
+
+    def primary_langtags
+      return [] unless primary_fallback
+
+      @_primary_langtags ||= begin
+        langtags = ::Set[]
+        preferred_langtags.each do |langtag|
+          next unless (primary_langsubtag = langtag[/\A([a-z]{2})-{1}[a-zA-Z]+/, 1])
+
+          langtags.add(primary_langsubtag)
+        end
+        langtags
+      end
     end
   end
 end

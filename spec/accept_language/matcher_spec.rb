@@ -4,10 +4,11 @@ require_relative File.join("..", "spec_helper")
 
 RSpec.describe AcceptLanguage::Matcher do
   let(:matcher) do
-    described_class.new(**AcceptLanguage::Parser.new(field).languages_range)
+    described_class.new(primary_fallback:, **AcceptLanguage::Parser.new(field).languages_range)
   end
 
   let(:best_match) { matcher.call(*available_langtags) }
+  let(:primary_fallback) { false }
 
   context "when asking for Chinese (Taiwan)" do
     let(:available_langtags) { [available_langtag] }
@@ -35,6 +36,34 @@ RSpec.describe AcceptLanguage::Matcher do
       let(:available_langtag) { "ug-CN" }
 
       it { expect(best_match).to be_nil }
+    end
+
+    context "when primary_fallback is in true" do
+      let(:primary_fallback) { true }
+
+      context "when Chinese is available" do
+        let(:available_langtag) { "zh" }
+
+        it { expect(best_match).to eq "zh" }
+      end
+
+      context "when Chinese (Hong Kong) is available" do
+        let(:available_langtag) { "zh-HK" }
+
+        it { expect(best_match).to be_nil }
+      end
+
+      context "when Chinese (Taiwan) is available" do
+        let(:available_langtag) { "zh-TW" }
+
+        it { expect(best_match).to eq "zh-TW" }
+      end
+
+      context "when Uyghur (China) is available" do
+        let(:available_langtag) { "ug-CN" }
+
+        it { expect(best_match).to be_nil }
+      end
     end
   end
 

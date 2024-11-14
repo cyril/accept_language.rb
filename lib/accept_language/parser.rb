@@ -34,8 +34,8 @@ module AcceptLanguage
     #   match(:ug, :kk, :ru, :en)
     #
     # @return [String, Symbol, nil] The language tag that best matches the parsed languages from the Accept-Language header, or nil if no match found.
-    def match(*available_langtags)
-      Matcher.new(**languages_range).call(*available_langtags)
+    def match(*available_langtags, primary_fallback: false)
+      Matcher.new(primary_fallback:, **languages_range).call(*available_langtags)
     end
 
     private
