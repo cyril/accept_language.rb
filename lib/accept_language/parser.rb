@@ -12,10 +12,16 @@ module AcceptLanguage
   #
   # @see https://tools.ietf.org/html/rfc2616#section-14.4 for more information on Accept-Language header fields.
   class Parser
-    DEFAULT_QUALITY = BigDecimal("1")
+    DEFAULT_QUALITY = "1"
     SEPARATOR = ","
     SPACE = " "
     SUFFIX = ";q="
+
+    # Validates q-values according to RFC 2616:
+    # - Must be between 0 and 1
+    # - Can have up to 3 decimal places
+    # - Allows both forms: .8 and 0.8
+    QVALUE_PATTERN = /\A(?:0(?:\.[0-9]{1,3})?|1(?:\.0{1,3})?|\.[0-9]{1,3})\z/
 
     attr_reader :languages_range
 
@@ -50,11 +56,21 @@ module AcceptLanguage
     def import(field)
       "#{field}".delete(SPACE).split(SEPARATOR).inject({}) do |hash, lang|
         tag, quality = lang.split(SUFFIX)
-        next hash if tag.nil?
+        next hash unless valid_tag?(tag)
 
-        quality = quality.nil? ? DEFAULT_QUALITY : BigDecimal(quality)
-        hash.merge(tag => quality)
+        quality = DEFAULT_QUALITY if quality.nil?
+        next hash unless valid_quality?(quality)
+
+        hash.merge(tag => BigDecimal(quality))
       end
+    end
+
+    def valid_quality?(quality)
+      quality.match?(QVALUE_PATTERN)
+    end
+
+    def valid_tag?(tag)
+      !tag.nil?
     end
   end
 end
