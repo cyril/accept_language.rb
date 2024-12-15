@@ -1,43 +1,26 @@
 AllCops:
   # @see https://docs.rubocop.org/rubocop/configuration.html#pre-processing
   Exclude:
-  
-    - .rubocop-https---raw-githubusercontent-com-sashite-sashite-rubocop-rb-v1-0-3-config-rubocop-performance-yml
-  
-    - .rubocop-https---raw-githubusercontent-com-sashite-sashite-rubocop-rb-v1-0-3-config-rubocop-rake-yml
-  
-    - .rubocop-https---raw-githubusercontent-com-sashite-sashite-rubocop-rb-v1-0-3-config-rubocop-rspec-yml
-  
-    - .rubocop-https---raw-githubusercontent-com-sashite-sashite-rubocop-rb-v1-0-3-config-rubocop-thread-safety-yml
-  
-    - .rubocop-https---raw-githubusercontent-com-sashite-sashite-rubocop-rb-v1-0-3-config-rubocop-yml
-  
+    - .DS_Store
     - .yardoc/
-  
     - coverage/
-  
     - doc/
-  
-    - pkg/
-  
+    - lib/.DS_Store
+    - spec/.DS_Store
 
   NewCops: enable
   TargetRubyVersion: 3.2
-
-inherit_from:
-  - https://raw.githubusercontent.com/sashite/sashite-rubocop.rb/v1.0.3/config/rubocop.yml
-  - https://raw.githubusercontent.com/sashite/sashite-rubocop.rb/v1.0.3/config/rubocop/performance.yml
-  - https://raw.githubusercontent.com/sashite/sashite-rubocop.rb/v1.0.3/config/rubocop/rake.yml
-  - https://raw.githubusercontent.com/sashite/sashite-rubocop.rb/v1.0.3/config/rubocop/rspec.yml
-  - https://raw.githubusercontent.com/sashite/sashite-rubocop.rb/v1.0.3/config/rubocop/thread_safety.yml
 
 inherit_mode:
   merge:
     - Exclude
 
 require:
-  - rubocop-gitlab-security
   - rubocop-md
+  - rubocop-thread_safety
+  - rubocop-rspec
+  - rubocop-rake
+  - rubocop-performance
 
 Layout/LineLength:
   Max: 150
@@ -48,18 +31,44 @@ Metrics/MethodLength:
 Performance/RedundantMatch:
   Enabled: false
 
-RSpec/ExampleLength:
-  Max: 10
-
-RSpec/MultipleMemoizedHelpers:
-  Max: 10
-
-RSpec/NestedGroups:
-  Max: 7
-
 # Check with yard instead.
 Style/Documentation:
   Enabled: false
 
 Style/RedundantInterpolation:
+  Enabled: false
+
+Layout/HashAlignment:
+  EnforcedHashRocketStyle: table
+  EnforcedColonStyle: table
+
+Metrics/ClassLength:
+  Enabled: false
+
+Naming/MemoizedInstanceVariableName:
+  EnforcedStyleForLeadingUnderscores: required
+
+Style/ClassAndModuleChildren:
+  EnforcedStyle: nested
+
+Style/EmptyMethod:
+  EnforcedStyle: expanded
+
+# As long as we don't need to use a version lower or equal to 1.9, we can use the new syntax.
+Style/SymbolArray:
+  Enabled: true
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+RSpec/ExampleLength:
+  Enabled: false
+
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+
+RSpec/NestedGroups:
+  Enabled: false
+
+RSpec/NamedSubject:
   Enabled: false
