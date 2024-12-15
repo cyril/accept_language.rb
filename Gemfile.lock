@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    accept_language (2.0.7)
+    accept_language (2.0.8)
 
 GEM
   remote: https://rubygems.org/
