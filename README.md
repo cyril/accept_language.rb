@@ -48,40 +48,99 @@ gem install accept_language
 
 ## Usage
 
-`Accept Language` library is primarily designed to assist web servers in serving multilingual content based on user preferences expressed in the `Accept-Language` header. This library finds the best matching language from the available languages your application supports and the languages the user prefers.
+The `Accept Language` library helps web applications serve content in the user's preferred language by parsing the `Accept-Language` HTTP header. This header indicates the user's language preferences and their priority order.
 
-Below are some examples of how you might use the library:
+### Basic Syntax
+
+The library has two main methods:
+
+- `AcceptLanguage.parse(header)`: Parses the Accept-Language header
+- `match(*available_languages)`: Matches against the languages your application supports
 
 ```ruby
-# The user prefers Danish, then British English, and finally any kind of English.
-# Since your application supports English and Danish, it selects Danish as it's the user's first choice.
-AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7").match(:en, :da) # => :da
-
-# The user prefers Danish, then English, and finally Uyghur. Your application supports British English and Chinese Uyghur.
-# Here, the library will return Chinese Uyghur because it's the highest ranked language in the user's list that your application supports.
-AcceptLanguage.parse("da, en;q=0.8, ug;q=0.9").match("en-GB", "ug-CN") # => "ug-CN"
-
-# The user prefers Danish, then British English, and finally any kind of English. Your application only supports Japanese.
-# Since none of the user's preferred languages are supported, it returns nil.
-AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7").match(:ja) # => nil
-
-# The user only accepts Swiss French, but your application only supports French. Since Swiss French and French are not the same, it returns nil.
-AcceptLanguage.parse("fr-CH").match(:fr) # => nil
-
-# The user prefers German, then any language except French. Your application supports French.
-# Even though the user specified a wildcard, they explicitly excluded French. Therefore, it returns nil.
-AcceptLanguage.parse("de, zh;q=0.4, *;q=0.5, fr;q=0").match(:fr) # => nil
-
-# The user prefers Uyghur (in Latin script, as used in Uzbekistan). Your application supports this exact variant of Uyghur.
-# Since the user's first choice matches a language your application supports, it returns that language.
-AcceptLanguage.parse("uz-latn-uz").match("uz-Latn-UZ") # => "uz-Latn-UZ"
-
-# The user doesn't mind what language they get, but they'd prefer not to have English. Your application supports English.
-# Even though the user specified a wildcard, they explicitly excluded English. Therefore, it returns nil.
-AcceptLanguage.parse("*, en;q=0").match("en") # => nil
+AcceptLanguage.parse("fr-CH, fr;q=0.9").match(:fr, :"fr-CH") # => :"fr-CH"
 ```
 
-These examples show the flexibility and power of `Accept Language`. By giving your application a deep understanding of the user's language preferences, `Accept Language` can significantly improve user satisfaction and engagement with your application.
+### Understanding Language Preferences
+
+#### Simple Language Matching
+
+```ruby
+# Header: "da" (Danish is the preferred language)
+# Available: :en and :da
+AcceptLanguage.parse("da").match(:en, :da) # => :da
+
+# No match available - returns nil
+AcceptLanguage.parse("da").match(:fr, :en) # => nil
+```
+
+#### Quality Values (q-values)
+
+Q-values range from 0 to 1 and indicate preference order:
+
+```ruby
+# Header: "da, en-GB;q=0.8, en;q=0.7"
+# Means:
+#   - Danish (da): q=1.0 (highest priority)
+#   - British English (en-GB): q=0.8 (second choice)
+#   - Generic English (en): q=0.7 (third choice)
+AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7").match(:en, :da) # => :da
+AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7").match(:en, :"en-GB") # => :"en-GB"
+```
+
+#### Language Variants
+
+The library handles specific language variants (regional or script variations):
+
+```ruby
+# Specific variants must match exactly
+AcceptLanguage.parse("fr-CH").match(:fr) # => nil (Swiss French ≠ Generic French)
+
+# But generic variants can match specific ones
+AcceptLanguage.parse("fr").match(:"fr-CH") # => :"fr-CH"
+
+# Script variants are also supported
+AcceptLanguage.parse("uz-Latn-UZ").match("uz-Latn-UZ") # => "uz-Latn-UZ"
+```
+
+#### Wildcards and Exclusions
+
+The `*` wildcard matches any language, and `q=0` excludes languages:
+
+```ruby
+# Accept any language but prefer German
+AcceptLanguage.parse("de-DE, *;q=0.5").match(:fr) # => :fr (matched by wildcard)
+
+# Accept any language EXCEPT English
+AcceptLanguage.parse("*, en;q=0").match(:en) # => nil (explicitly excluded)
+AcceptLanguage.parse("*, en;q=0").match(:fr) # => :fr (matched by wildcard)
+```
+
+#### Complex Example
+
+```ruby
+# Header: "de-LU, fr;q=0.9, en;q=0.7, *;q=0.5"
+# Means:
+#   - Luxembourg German: q=1.0 (highest priority)
+#   - French: q=0.9 (second choice)
+#   - English: q=0.7 (third choice)
+#   - Any other language: q=0.5 (lowest priority)
+header = "de-LU, fr;q=0.9, en;q=0.7, *;q=0.5"
+parser = AcceptLanguage.parse(header)
+
+parser.match(:de, :"de-LU") # => :"de-LU" (exact match)
+parser.match(:fr, :en)      # => :fr (higher q-value)
+parser.match(:es, :it)      # => :es (matched by wildcard)
+```
+
+### Case Sensitivity
+
+The matching is case-insensitive but preserves the case of the returned value:
+
+```ruby
+AcceptLanguage.parse("en-GB").match("en-gb") # => "en-gb"
+AcceptLanguage.parse("en-gb").match("en-GB") # => "en-GB"
+```
 
 ### Rails integration example
 
@@ -95,6 +154,7 @@ class ApplicationController < ActionController::Base
   end
 
   def best_locale_from_request
+    # HTTP_ACCEPT_LANGUAGE is the standardized key for the Accept-Language header in Rack/Rails
     return I18n.default_locale unless request.headers.key?("HTTP_ACCEPT_LANGUAGE")
 
     string = request.headers.fetch("HTTP_ACCEPT_LANGUAGE")
