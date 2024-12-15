@@ -3,8 +3,9 @@
 require "bigdecimal"
 
 module AcceptLanguage
-  # Parser is a utility class responsible for parsing Accept-Language header fields.
-  # It processes the field to extract language tags and their respective quality values.
+  # Parses Accept-Language header fields into structured data, extracting language tags
+  # and their quality values (q-values). Validates input according to RFC 2616 specifications
+  # and handles edge cases like malformed inputs and implicit quality values.
   #
   # @example
   #   Parser.new("da, en-GB;q=0.8, en;q=0.7")
@@ -32,14 +33,15 @@ module AcceptLanguage
       @languages_range = import(field)
     end
 
-    # Uses the Matcher class to find the best language match from the list of available languages.
+    # Finds the best matching language from available options based on user preferences.
+    # Considers quality values and language tag specificity (e.g., "en-US" vs "en").
     #
-    # @param [Array<String, Symbol>] available_langtags An array of language tags that are available for matching.
-    #
-    # @example When Uyghur, Kazakh, Russian and English languages are available.
-    #   match(:ug, :kk, :ru, :en)
-    #
-    # @return [String, Symbol, nil] The language tag that best matches the parsed languages from the Accept-Language header, or nil if no match found.
+    # @param [Array<String, Symbol>] available_langtags Languages supported by your application
+    # @return [String, Symbol, nil] Best matching language tag or nil if no match found
+    # @example Match against specific language options
+    #   parser.match("en", "fr", "de") # => "en" if English is preferred
+    # @example Match with region-specific tags
+    #   parser.match("en-US", "en-GB", "fr") # => "en-GB" if British English is preferred
     def match(*available_langtags)
       Matcher.new(**languages_range).call(*available_langtags)
     end
@@ -70,7 +72,7 @@ module AcceptLanguage
     end
 
     def valid_tag?(tag)
-      !tag.nil?
+      !tag.nil? && !tag.empty?
     end
   end
 end

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 module AcceptLanguage
-  # A utility class that provides functionality to match the Accept-Language header value
-  # against the languages supported by your application. This helps in identifying the most
-  # suitable languages to present to the user based on their preferences.
+  # Matches Accept-Language header values against application-supported languages to determine
+  # the optimal language choice. Handles quality values, wildcards, and language tag matching
+  # according to RFC 2616 specifications.
   #
   # @example
   #   Matcher.new("da" => 1.0, "en-GB" => 0.8, "en" => 0.7).call(:ug, :kk, :ru, :en) # => :en
@@ -34,41 +34,51 @@ module AcceptLanguage
       @preferred_langtags = langtags.compact.reverse
     end
 
-    # Matches the user's preferred languages against the available languages of your application.
-    # It prioritizes higher quality values and returns the most suitable match.
+    # Finds the optimal language match by comparing user preferences against available languages.
+    # Handles priorities based on:
+    # 1. Explicit quality values (q-values)
+    # 2. Language tag specificity (exact matches preferred over partial matches)
+    # 3. Order of preference in the original Accept-Language header
     #
-    # @param [Array<String, Symbol>] available_langtags An array representing the languages available in your application.
-    #
-    # @example When Uyghur, Kazakh, Russian and English languages are available.
-    #   call(:ug, :kk, :ru, :en)
-    #
-    # @return [String, Symbol, nil] The language that best matches the user's preferences, or nil if there is no match.
+    # @param [Array<String, Symbol>] available_langtags Languages supported by your application
+    # @return [String, Symbol, nil] Best matching language or nil if no acceptable match found
+    # @raise [ArgumentError] If any language tag is nil
     def call(*available_langtags)
-      available_langtags = drop_unacceptable(*available_langtags)
+      raise ::ArgumentError, "Language tags cannot be nil" if available_langtags.any?(&:nil?)
 
+      filtered_tags = drop_unacceptable(*available_langtags)
+      return nil if filtered_tags.empty?
+
+      find_best_match(filtered_tags)
+    end
+
+    private
+
+    def find_best_match(available_langtags)
       preferred_langtags.each do |preferred_tag|
-        if wildcard?(preferred_tag)
-          langtag = any_other_langtag(*available_langtags)
-          return langtag unless langtag.nil?
-        else
-          available_langtags.each do |available_langtag|
-            return available_langtag if available_langtag.match?(/\A#{preferred_tag}/i)
-          end
-        end
+        match = match_langtag(preferred_tag, available_langtags)
+        return match if match
       end
 
       nil
     end
 
-    private
+    def match_langtag(preferred_tag, available_langtags)
+      if wildcard?(preferred_tag)
+        any_other_langtag(*available_langtags)
+      else
+        find_matching_tag(preferred_tag, available_langtags)
+      end
+    end
+
+    def find_matching_tag(preferred_tag, available_langtags)
+      available_langtags.find { |tag| tag.match?(/\A#{preferred_tag}/i) }
+    end
 
     def any_other_langtag(*available_langtags)
       available_langtags.find do |available_langtag|
         langtags = preferred_langtags - [WILDCARD]
-
-        langtags.none? do |langtag|
-          available_langtag.match?(/\A#{langtag}/i)
-        end
+        langtags.none? { |tag| available_langtag.match?(/\A#{tag}/i) }
       end
     end
 
@@ -81,9 +91,7 @@ module AcceptLanguage
     end
 
     def unacceptable?(langtag)
-      excluded_langtags.any? do |excluded_langtag|
-        langtag.match?(/\A#{excluded_langtag}/i)
-      end
+      excluded_langtags.any? { |excluded_tag| langtag.match?(/\A#{excluded_tag}/i) }
     end
 
     def wildcard?(value)

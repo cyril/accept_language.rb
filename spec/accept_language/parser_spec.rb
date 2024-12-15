@@ -29,7 +29,7 @@ RSpec.describe AcceptLanguage::Parser do
         it "handles the spaces correctly" do
           expect(parser.languages_range).to eq(
             "en-US" => BigDecimal("0.8"),
-            "fr" => BigDecimal("0.7")
+            "fr"    => BigDecimal("0.7")
           )
         end
       end
@@ -39,7 +39,7 @@ RSpec.describe AcceptLanguage::Parser do
 
         it "ignores malformed tags" do
           expect(parser.languages_range).to eq(
-            "fr" => BigDecimal("0.7"),
+            "fr"    => BigDecimal("0.7"),
             "en-US" => BigDecimal("1.0")
           )
         end
@@ -54,8 +54,8 @@ RSpec.describe AcceptLanguage::Parser do
           it "accepts the short notation" do
             expect(parser.languages_range).to eq(
               "en-US" => BigDecimal("0.8"),
-              "fr" => BigDecimal("0.123"),
-              "de" => BigDecimal("1.0")
+              "fr"    => BigDecimal("0.123"),
+              "de"    => BigDecimal("1.0")
             )
           end
         end
@@ -66,8 +66,8 @@ RSpec.describe AcceptLanguage::Parser do
           it "accepts the full notation" do
             expect(parser.languages_range).to eq(
               "en-US" => BigDecimal("0.8"),
-              "fr" => BigDecimal("0.123"),
-              "de" => BigDecimal("1.0")
+              "fr"    => BigDecimal("0.123"),
+              "de"    => BigDecimal("1.0")
             )
           end
         end
@@ -78,7 +78,7 @@ RSpec.describe AcceptLanguage::Parser do
           it "assigns default quality value of 1.0" do
             expect(parser.languages_range).to eq(
               "en-US" => BigDecimal("1.0"),
-              "fr" => BigDecimal("0.8")
+              "fr"    => BigDecimal("0.8")
             )
           end
         end
@@ -86,10 +86,24 @@ RSpec.describe AcceptLanguage::Parser do
         context "with zero quality value" do
           let(:raw_input) { "en-US;q=0.8, fr;q=0, de;q=0.7" }
 
-          it "excludes zero quality entries" do
+          it "includes zero quality entries" do
             expect(parser.languages_range).to eq(
               "en-US" => BigDecimal("0.8"),
-              "de" => BigDecimal("0.7")
+              "fr"    => BigDecimal("0.0"),
+              "de"    => BigDecimal("0.7")
+            )
+          end
+        end
+
+        context "with multiple zero quality values" do
+          let(:raw_input) { "en-US;q=0.8, fr;q=0, de;q=0, it;q=0.7" }
+
+          it "includes all zero quality entries" do
+            expect(parser.languages_range).to eq(
+              "en-US" => BigDecimal("0.8"),
+              "fr"    => BigDecimal("0.0"),
+              "de"    => BigDecimal("0.0"),
+              "it"    => BigDecimal("0.7")
             )
           end
         end
@@ -156,11 +170,11 @@ RSpec.describe AcceptLanguage::Parser do
 
         it "processes the wildcard correctly" do
           expect(parser.languages_range).to eq(
-            "fr" => BigDecimal("1.0"),
+            "fr"    => BigDecimal("1.0"),
             "fr-CH" => BigDecimal("0.9"),
-            "en" => BigDecimal("0.8"),
-            "de" => BigDecimal("0.7"),
-            "*" => BigDecimal("0.5")
+            "en"    => BigDecimal("0.8"),
+            "de"    => BigDecimal("0.7"),
+            "*"     => BigDecimal("0.5")
           )
         end
       end
