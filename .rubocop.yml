@@ -9,7 +9,7 @@ AllCops:
     - spec/.DS_Store
 
   NewCops: enable
-  TargetRubyVersion: 3.2
+  TargetRubyVersion: 3.1
 
 inherit_mode:
   merge:
