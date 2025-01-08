@@ -2,12 +2,14 @@ PATH
   remote: .
   specs:
     accept_language (2.0.8)
+      bigdecimal
 
 GEM
   remote: https://rubygems.org/
   specs:
     ast (2.4.2)
     aw (0.2.0)
+    bigdecimal (3.1.9)
     defi (2.0.7)
       aw (~> 0.2.0)
     docile (1.4.1)
