@@ -12,8 +12,8 @@ Whether you're building a multilingual web application or just trying to make yo
 
 [![Version](https://img.shields.io/github/v/tag/cyril/accept_language.rb?label=Version&logo=github)](https://github.com/cyril/accept_language.rb/tags)
 [![Yard documentation](https://img.shields.io/badge/Yard-documentation-blue.svg?logo=github)](https://rubydoc.info/github/cyril/accept_language.rb/main)
-[![Ruby](https://github.com/cyril/accept_language.rb/workflows/Ruby/badge.svg?branch=main)](https://github.com/cyril/accept_language.rb/actions?query=workflow%3Aruby+branch%3Amain)
-[![RuboCop](https://github.com/cyril/accept_language.rb/workflows/RuboCop/badge.svg?branch=main)](https://github.com/cyril/accept_language.rb/actions?query=workflow%3Arubocop+branch%3Amain)
+![Ruby](https://github.com/cyril/accept_language.rb/actions/workflows/main.yml/badge.svg?branch=main)
+![RuboCop](https://github.com/cyril/accept_language.rb/actions/workflows/rubocop.yml/badge.svg?branch=main)
 [![License](https://img.shields.io/github/license/cyril/accept_language.rb?label=License&logo=github)](https://github.com/cyril/accept_language.rb/raw/main/LICENSE.md)
 
 ## Why Choose Accept Language?
