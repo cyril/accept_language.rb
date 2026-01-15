@@ -189,6 +189,59 @@ RSpec.describe AcceptLanguage::Parser do
         end
       end
     end
+
+    context "with regex special characters" do
+      context "when input contains dot star pattern" do
+        let(:raw_input) { ".*" }
+
+        it "rejects the malformed tag" do
+          expect(parser.languages_range).to eq({})
+        end
+      end
+
+      context "when input contains dot" do
+        let(:raw_input) { "en.US" }
+
+        it "rejects the malformed tag" do
+          expect(parser.languages_range).to eq({})
+        end
+      end
+
+      context "when input contains capturing group" do
+        let(:raw_input) { "(en)" }
+
+        it "rejects the malformed tag" do
+          expect(parser.languages_range).to eq({})
+        end
+      end
+
+      context "when input contains character class" do
+        let(:raw_input) { "[a-z]" }
+
+        it "rejects the malformed tag" do
+          expect(parser.languages_range).to eq({})
+        end
+      end
+
+      context "when input contains alternation" do
+        let(:raw_input) { "en|fr" }
+
+        it "rejects the malformed tag" do
+          expect(parser.languages_range).to eq({})
+        end
+      end
+
+      context "when input contains mixed valid and invalid tags" do
+        let(:raw_input) { "en, .*;q=0.8, fr;q=0.7" }
+
+        it "keeps only valid tags" do
+          expect(parser.languages_range).to eq(
+            "en" => BigDecimal("1.0"),
+            "fr" => BigDecimal("0.7")
+          )
+        end
+      end
+    end
   end
 
   describe "#match" do
