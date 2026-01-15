@@ -1,148 +1,75 @@
-# Accept Language 🌐
+# AcceptLanguage
 
-Web applications often need to cater to users from around the world. One of the ways they can provide a better user experience is by presenting the content in the user's preferred language. This is where the `Accept-Language` HTTP header comes into play. Sent by the client (usually a web browser), this header tells the server the list of languages the user understands, and the user's preference order.
-
-Parsing the `Accept-Language` header can be complex due to its flexible format defined in [RFC 2616](https://tools.ietf.org/html/rfc2616#section-14.4). For instance, it can specify languages, countries, and scripts with varying degrees of preference (quality values).
-
-`Accept Language` is a lightweight, thread-safe Ruby library designed to parse the `Accept-Language` header, making it easier for your application to determine the best language to respond with. It calculates the intersection of the languages the user prefers and the languages your application supports, handling all the complexity of quality values and wildcards.
-
-Whether you're building a multilingual web application or just trying to make your service more accessible to users worldwide, `Accept Language` offers a reliable, simple solution.
-
-## Status
+A lightweight, thread-safe Ruby library for parsing `Accept-Language` HTTP headers as defined in [RFC 2616](https://tools.ietf.org/html/rfc2616#section-14.4).
 
 [![Version](https://img.shields.io/github/v/tag/cyril/accept_language.rb?label=Version&logo=github)](https://github.com/cyril/accept_language.rb/tags)
 [![Yard documentation](https://img.shields.io/badge/Yard-documentation-blue.svg?logo=github)](https://rubydoc.info/github/cyril/accept_language.rb/main)
-![Ruby](https://github.com/cyril/accept_language.rb/actions/workflows/main.yml/badge.svg?branch=main)
+![Ruby](https://github.com/cyril/accept_language.rb/actions/workflows/ruby.yml/badge.svg?branch=main)
 ![RuboCop](https://github.com/cyril/accept_language.rb/actions/workflows/rubocop.yml/badge.svg?branch=main)
 [![License](https://img.shields.io/github/license/cyril/accept_language.rb?label=License&logo=github)](https://github.com/cyril/accept_language.rb/raw/main/LICENSE.md)
 
-## Why Choose Accept Language?
+## Features
 
-There are a myriad of tools out there, so why should you consider Accept Language for your next project? Here's why:
-
-- **Thread-Safe**: Multithreading can present unique challenges when dealing with shared resources. Our implementation is designed to be thread-safe, preventing potential concurrency issues.
-- **Compact and Robust**: Despite being small in size, Accept Language can handle even the trickiest cases with grace, ensuring you have a reliable tool at your disposal.
-- **Case-Insensitive Matching**: In line with the principle of robustness, our tool matches both strings and symbols regardless of case, providing greater flexibility.
-- **Independent of Framework**: While many tools require Rails, Rack, or i18n to function, Accept Language stands on its own. It works perfectly well without these dependencies, increasing its adaptability.
-- **BCP 47 Support**: BCP 47 defines a standard for language tags. This is crucial for specifying languages unambiguously. Accept Language complies with this standard, ensuring accurate language identification.
+- Thread-safe
+- No framework dependencies
+- Case-insensitive matching
+- BCP 47 language tag support
+- Wildcard and exclusion handling
 
 ## Installation
-
-Add this line to your application's Gemfile:
 
 ```ruby
 gem "accept_language"
 ```
 
-And then execute:
-
-```sh
-bundle install
-```
-
-Or install it yourself as:
-
-```sh
-gem install accept_language
-```
-
 ## Usage
 
-The `Accept Language` library helps web applications serve content in the user's preferred language by parsing the `Accept-Language` HTTP header. This header indicates the user's language preferences and their priority order.
-
-### Basic Syntax
-
-The library has two main methods:
-
-- `AcceptLanguage.parse(header)`: Parses the Accept-Language header
-- `match(*available_languages)`: Matches against the languages your application supports
-
 ```ruby
-AcceptLanguage.parse("fr-CH, fr;q=0.9").match(:fr, :"fr-CH") # => :"fr-CH"
+AcceptLanguage.parse("en-GB, en;q=0.9").match(:en, :"en-GB")
+# => :"en-GB"
 ```
 
-### Understanding Language Preferences
+### Quality values
 
-#### Simple Language Matching
-
-```ruby
-# Header: "da" (Danish is the preferred language)
-# Available: :en and :da
-AcceptLanguage.parse("da").match(:en, :da) # => :da
-
-# No match available - returns nil
-AcceptLanguage.parse("da").match(:fr, :en) # => nil
-```
-
-#### Quality Values (q-values)
-
-Q-values range from 0 to 1 and indicate preference order:
+Quality values (q-values) indicate preference order from 0 to 1:
 
 ```ruby
-# Header: "da, en-GB;q=0.8, en;q=0.7"
-# Means:
-#   - Danish (da): q=1.0 (highest priority)
-#   - British English (en-GB): q=0.8 (second choice)
-#   - Generic English (en): q=0.7 (third choice)
-AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7").match(:en, :da) # => :da
-AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7").match(:en, :"en-GB") # => :"en-GB"
+parser = AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7")
+
+parser.match(:en, :da)      # => :da
+parser.match(:en, :"en-GB") # => :"en-GB"
+parser.match(:fr)           # => nil
 ```
 
-#### Language Variants
+### Language variants
 
-The library handles specific language variants (regional or script variations):
+A generic language tag matches its regional variants, but not the reverse:
 
 ```ruby
-# Specific variants must match exactly
-AcceptLanguage.parse("fr-CH").match(:fr) # => nil (Swiss French ≠ Generic French)
-
-# But generic variants can match specific ones
-AcceptLanguage.parse("fr").match(:"fr-CH") # => :"fr-CH"
-
-# Script variants are also supported
-AcceptLanguage.parse("uz-Latn-UZ").match("uz-Latn-UZ") # => "uz-Latn-UZ"
+AcceptLanguage.parse("fr").match(:"fr-CH")    # => :"fr-CH"
+AcceptLanguage.parse("fr-CH").match(:fr)      # => nil
 ```
 
-#### Wildcards and Exclusions
+### Wildcards and exclusions
 
-The `*` wildcard matches any language, and `q=0` excludes languages:
+The wildcard `*` matches any language. A q-value of 0 explicitly excludes a language:
 
 ```ruby
-# Accept any language but prefer German
-AcceptLanguage.parse("de-DE, *;q=0.5").match(:fr) # => :fr (matched by wildcard)
-
-# Accept any language EXCEPT English
-AcceptLanguage.parse("*, en;q=0").match(:en) # => nil (explicitly excluded)
-AcceptLanguage.parse("*, en;q=0").match(:fr) # => :fr (matched by wildcard)
+AcceptLanguage.parse("de-DE, *;q=0.5").match(:fr)  # => :fr
+AcceptLanguage.parse("*, en;q=0").match(:en)       # => nil
+AcceptLanguage.parse("*, en;q=0").match(:fr)       # => :fr
 ```
 
-#### Complex Example
+### Case sensitivity
 
-```ruby
-# Header: "de-LU, fr;q=0.9, en;q=0.7, *;q=0.5"
-# Means:
-#   - Luxembourg German: q=1.0 (highest priority)
-#   - French: q=0.9 (second choice)
-#   - English: q=0.7 (third choice)
-#   - Any other language: q=0.5 (lowest priority)
-header = "de-LU, fr;q=0.9, en;q=0.7, *;q=0.5"
-parser = AcceptLanguage.parse(header)
-
-parser.match(:de, :"de-LU") # => :"de-LU" (exact match)
-parser.match(:fr, :en)      # => :fr (higher q-value)
-parser.match(:es, :it)      # => :es (matched by wildcard)
-```
-
-### Case Sensitivity
-
-The matching is case-insensitive but preserves the case of the returned value:
+Matching is case-insensitive but preserves the case of the available language tag:
 
 ```ruby
 AcceptLanguage.parse("en-GB").match("en-gb") # => "en-gb"
 AcceptLanguage.parse("en-gb").match("en-GB") # => "en-GB"
 ```
 
-### Rails integration example
+## Rails integration
 
 ```ruby
 # app/controllers/application_controller.rb
@@ -171,15 +98,16 @@ class ApplicationController < ActionController::Base
 end
 ```
 
-## Read more
+## Documentation
 
+- [API Documentation](https://rubydoc.info/github/cyril/accept_language.rb/main)
 - [Language negotiation with Ruby](https://dev.to/cyri_/language-negotiation-with-ruby-5166)
 - [Rubyで言語ネゴシエーション](https://qiita.com/cyril/items/45dc233edb7be9d614e7)
 
 ## Versioning
 
-__AcceptLanguage__ uses [Semantic Versioning 2.0.0](https://semver.org/)
+This library follows [Semantic Versioning 2.0.0](https://semver.org/).
 
 ## License
 
-The [gem](https://rubygems.org/gems/accept_language) is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+Available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).

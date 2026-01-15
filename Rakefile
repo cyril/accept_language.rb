@@ -11,13 +11,7 @@ Rake::TestTask.new do |t|
   t.warning = true
 end
 
-RuboCop::RakeTask.new do |task|
-  task.requires << "rubocop-md"
-  task.requires << "rubocop-performance"
-  task.requires << "rubocop-rake"
-  task.requires << "rubocop-rspec"
-  task.requires << "rubocop-thread_safety"
-end
+RuboCop::RakeTask.new
 
 YARD::Rake::YardocTask.new
 

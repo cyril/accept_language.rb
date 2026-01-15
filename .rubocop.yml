@@ -1,26 +1,22 @@
 AllCops:
-  # @see https://docs.rubocop.org/rubocop/configuration.html#pre-processing
   Exclude:
-    - .DS_Store
-    - .yardoc/
-    - coverage/
-    - doc/
-    - lib/.DS_Store
-    - spec/.DS_Store
+    - .yardoc/**/*
+    - coverage/**/*
+    - doc/**/*
 
   NewCops: enable
-  TargetRubyVersion: 3.1
+  TargetRubyVersion: 3.2
 
 inherit_mode:
   merge:
     - Exclude
 
-require:
+plugins:
   - rubocop-md
-  - rubocop-thread_safety
-  - rubocop-rspec
-  - rubocop-rake
   - rubocop-performance
+  - rubocop-rake
+  - rubocop-rspec
+  - rubocop-thread_safety
 
 Layout/LineLength:
   Max: 150
@@ -54,7 +50,6 @@ Style/ClassAndModuleChildren:
 Style/EmptyMethod:
   EnforcedStyle: expanded
 
-# As long as we don't need to use a version lower or equal to 1.9, we can use the new syntax.
 Style/SymbolArray:
   Enabled: true
 
