@@ -287,4 +287,109 @@ RSpec.describe AcceptLanguage::Matcher do
       end
     end
   end
+
+  describe "RFC 2616 Section 14.4 prefix matching" do
+    let(:available_langtags) { [available_langtag] }
+
+    # RFC 2616: "A language-range matches a language-tag if it exactly equals
+    # the tag, or if it exactly equals a prefix of the tag such that the first
+    # tag character following the prefix is '-'."
+
+    context "when language-range is 'zh'" do
+      let(:field) { "zh" }
+
+      context "when available tag is 'zh' (exact match)" do
+        let(:available_langtag) { "zh" }
+
+        it "matches exactly" do
+          expect(best_match).to eq "zh"
+        end
+      end
+
+      context "when available tag is 'zh-TW' (valid prefix match)" do
+        let(:available_langtag) { "zh-TW" }
+
+        it "matches because 'zh' is followed by '-'" do
+          expect(best_match).to eq "zh-TW"
+        end
+      end
+
+      context "when available tag is 'zh-Hans-CN' (valid nested prefix match)" do
+        let(:available_langtag) { "zh-Hans-CN" }
+
+        it "matches because 'zh' is followed by '-'" do
+          expect(best_match).to eq "zh-Hans-CN"
+        end
+      end
+
+      context "when available tag is 'zhx' (invalid: not followed by '-')" do
+        let(:available_langtag) { "zhx" }
+
+        it "does NOT match because 'zh' is followed by 'x', not '-'" do
+          expect(best_match).to be_nil
+        end
+      end
+
+      context "when available tag is 'zhx-Hans' (invalid: different language code)" do
+        let(:available_langtag) { "zhx-Hans" }
+
+        it "does NOT match because 'zhx' is a different ISO 639-3 code" do
+          expect(best_match).to be_nil
+        end
+      end
+    end
+
+    context "when language-range is 'en'" do
+      let(:field) { "en" }
+
+      context "when available tag is 'english' (invalid: not a subtag)" do
+        let(:available_langtag) { "english" }
+
+        it "does NOT match because 'en' is not followed by '-'" do
+          expect(best_match).to be_nil
+        end
+      end
+    end
+
+    context "with exclusions (q=0) respecting hyphen boundary" do
+      let(:field) { "*, zh;q=0" }
+
+      context "when 'zh' is excluded" do
+        context "when 'zh-TW' is available" do
+          let(:available_langtag) { "zh-TW" }
+
+          it "excludes 'zh-TW' because it matches the 'zh' prefix" do
+            expect(best_match).to be_nil
+          end
+        end
+
+        context "when 'zhx-Hans' is available" do
+          let(:available_langtag) { "zhx-Hans" }
+
+          it "accepts 'zhx-Hans' because 'zhx' does not match 'zh' prefix" do
+            expect(best_match).to eq "zhx-Hans"
+          end
+        end
+      end
+    end
+
+    context "with wildcard respecting hyphen boundary" do
+      let(:field) { "zh, *;q=0.5" }
+      let(:available_langtags) { %w[zh-TW zhx-Hans] }
+
+      it "matches 'zh-TW' via prefix and 'zhx-Hans' via wildcard" do
+        # 'zh-TW' matches 'zh' prefix (q=1.0)
+        # 'zhx-Hans' does NOT match 'zh' prefix, so falls to wildcard (q=0.5)
+        expect(best_match).to eq "zh-TW"
+      end
+
+      context "when only 'zhx-Hans' is available" do
+        let(:available_langtags) { ["zhx-Hans"] }
+
+        it "matches via wildcard, not via 'zh' prefix" do
+          expect(best_match).to eq "zhx-Hans"
+        end
+      end
+    end
+  end
 end

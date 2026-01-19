@@ -61,7 +61,7 @@ module AcceptLanguage
     end
 
     def find_matching_tag(preferred_tag, available_langtags)
-      available_langtags.find { |tag| tag.downcase.start_with?(preferred_tag) }
+      available_langtags.find { |tag| prefix_match?(preferred_tag, String(tag.downcase)) }
     end
 
     def any_other_langtag(*available_langtags)
@@ -69,7 +69,7 @@ module AcceptLanguage
 
       available_langtags.find do |available_langtag|
         available_downcased = available_langtag.downcase
-        langtags.none? { |tag| available_downcased.start_with?(tag) }
+        langtags.none? { |tag| prefix_match?(tag, String(available_downcased)) }
       end
     end
 
@@ -81,11 +81,23 @@ module AcceptLanguage
 
     def unacceptable?(langtag)
       langtag_downcased = langtag.downcase
-      excluded_langtags.any? { |excluded_tag| langtag_downcased.start_with?(excluded_tag) }
+      excluded_langtags.any? { |excluded_tag| prefix_match?(excluded_tag, String(langtag_downcased)) }
     end
 
     def wildcard?(value)
       value.eql?(WILDCARD)
+    end
+
+    # Implements RFC 2616 Section 14.4 prefix matching rule:
+    # "A language-range matches a language-tag if it exactly equals the tag,
+    # or if it exactly equals a prefix of the tag such that the first tag
+    # character following the prefix is '-'."
+    #
+    # @param prefix [String] The language-range to match (downcased)
+    # @param tag [String] The language-tag to test (downcased)
+    # @return [Boolean] true if prefix matches tag per RFC 2616 rules
+    def prefix_match?(prefix, tag)
+      tag == prefix || tag.start_with?("#{prefix}-")
     end
   end
 end
