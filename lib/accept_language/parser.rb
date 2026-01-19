@@ -54,7 +54,7 @@ module AcceptLanguage
     private
 
     def import(field)
-      "#{field}".delete(SPACE).split(SEPARATOR).inject({}) do |hash, lang|
+      "#{field}".downcase.delete(SPACE).split(SEPARATOR).inject({}) do |hash, lang|
         tag, quality = lang.split(SUFFIX)
         next hash unless valid_tag?(tag)
 

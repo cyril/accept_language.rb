@@ -61,17 +61,15 @@ module AcceptLanguage
     end
 
     def find_matching_tag(preferred_tag, available_langtags)
-      preferred_downcased = preferred_tag.downcase
-      available_langtags.find { |tag| tag.downcase.start_with?(preferred_downcased) }
+      available_langtags.find { |tag| tag.downcase.start_with?(preferred_tag) }
     end
 
     def any_other_langtag(*available_langtags)
       langtags = preferred_langtags - [WILDCARD]
-      downcased_langtags = langtags.map(&:downcase)
 
       available_langtags.find do |available_langtag|
         available_downcased = available_langtag.downcase
-        downcased_langtags.none? { |tag| available_downcased.start_with?(tag) }
+        langtags.none? { |tag| available_downcased.start_with?(tag) }
       end
     end
 
@@ -83,7 +81,7 @@ module AcceptLanguage
 
     def unacceptable?(langtag)
       langtag_downcased = langtag.downcase
-      excluded_langtags.any? { |excluded_tag| langtag_downcased.start_with?(excluded_tag.downcase) }
+      excluded_langtags.any? { |excluded_tag| langtag_downcased.start_with?(excluded_tag) }
     end
 
     def wildcard?(value)
