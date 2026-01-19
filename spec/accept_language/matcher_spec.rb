@@ -392,4 +392,121 @@ RSpec.describe AcceptLanguage::Matcher do
       end
     end
   end
+
+  describe "Wildcard exclusion (q=0)" do
+    let(:matcher) do
+      described_class.new(**AcceptLanguage::Parser.new(field).languages_range)
+    end
+
+    let(:best_match) { matcher.call(*available_langtags) }
+
+    # RFC 2616 Section 3.9: "If a parameter has a quality value of 0, then
+    # content with this parameter is 'not acceptable' for the client."
+    #
+    # When combined with the wildcard, "*;q=0" means "all languages not
+    # explicitly listed are not acceptable".
+
+    context "when '*;q=0' is used alone" do
+      let(:field) { "*;q=0" }
+      let(:available_langtags) { %w[en fr de] }
+
+      it "rejects all languages" do
+        expect(best_match).to be_nil
+      end
+    end
+
+    context "when '*;q=0' is combined with explicit preferences" do
+      let(:field) { "en, fr;q=0.8, *;q=0" }
+
+      context "when matching an explicitly listed language" do
+        let(:available_langtags) { %w[en] }
+
+        it "accepts the explicitly listed language" do
+          expect(best_match).to eq "en"
+        end
+      end
+
+      context "when matching a prefix of an explicitly listed language" do
+        let(:available_langtags) { %w[en-GB] }
+
+        it "accepts via prefix matching" do
+          expect(best_match).to eq "en-GB"
+        end
+      end
+
+      context "when matching a non-listed language" do
+        let(:available_langtags) { %w[de] }
+
+        it "rejects the non-listed language" do
+          expect(best_match).to be_nil
+        end
+      end
+
+      context "when both listed and non-listed languages are available" do
+        let(:available_langtags) { %w[en fr de ja] }
+
+        it "returns the best explicitly listed match" do
+          expect(best_match).to eq "en"
+        end
+      end
+    end
+
+    context "when '*;q=0' is combined with explicit exclusions" do
+      let(:field) { "en, de;q=0, *;q=0" }
+      let(:available_langtags) { %w[en de fr] }
+
+      it "accepts only the explicitly allowed language" do
+        # en: explicitly allowed (q=1)
+        # de: explicitly excluded (q=0)
+        # fr: excluded by wildcard (q=0)
+        expect(best_match).to eq "en"
+      end
+
+      context "when only excluded languages are available" do
+        let(:available_langtags) { %w[de fr] }
+
+        it "rejects all" do
+          expect(best_match).to be_nil
+        end
+      end
+    end
+
+    context "when wildcard has positive quality and specific exclusions" do
+      let(:field) { "*, en;q=0" }
+
+      context "when matching a non-excluded language" do
+        let(:available_langtags) { %w[fr] }
+
+        it "accepts via wildcard" do
+          expect(best_match).to eq "fr"
+        end
+      end
+
+      context "when matching an excluded language" do
+        let(:available_langtags) { %w[en] }
+
+        it "rejects the excluded language" do
+          expect(best_match).to be_nil
+        end
+      end
+
+      context "when matching a prefix of an excluded language" do
+        let(:available_langtags) { %w[en-GB] }
+
+        it "rejects via prefix exclusion" do
+          expect(best_match).to be_nil
+        end
+      end
+
+      context "when both excluded and non-excluded languages are available" do
+        let(:available_langtags) { %w[en fr de] }
+
+        it "returns a non-excluded language via wildcard" do
+          # en is excluded, fr and de match via wildcard
+          # Returns first non-excluded available tag
+          expect(best_match).to eq "fr"
+        end
+      end
+    end
+  end
 end

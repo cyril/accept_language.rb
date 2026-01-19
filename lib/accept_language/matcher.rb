@@ -21,6 +21,10 @@ module AcceptLanguage
 
       languages_range.select do |langtag, quality|
         if quality.zero?
+          # Exclude specific language tags, but NOT the wildcard.
+          # When "*;q=0" is specified, all non-listed languages become
+          # unacceptable implicitly (they won't match any preferred_langtags).
+          # Adding "*" to excluded_langtags would break prefix_match? logic.
           @excluded_langtags << langtag unless wildcard?(langtag)
         else
           level = (quality * 1_000).to_i
