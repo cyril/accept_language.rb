@@ -22,7 +22,9 @@ module AcceptLanguage
     # @api private
     SUFFIX = ";q="
     # @api private
-    QVALUE_PATTERN = /\A(?:0(?:\.[0-9]{1,3})?|1(?:\.0{1,3})?|\.[0-9]{1,3})\z/
+    # RFC 2616 Section 3.9 qvalue syntax:
+    #   qvalue = ( "0" [ "." 0*3DIGIT ] ) | ( "1" [ "." 0*3("0") ] )
+    QVALUE_PATTERN = /\A(?:0(?:\.[0-9]{1,3})?|1(?:\.0{1,3})?)\z/
     # @api private
     LANGTAG_PATTERN = /\A(?:\*|[a-zA-Z]{1,8}(?:-[a-zA-Z0-9]{1,8})*)\z/
 

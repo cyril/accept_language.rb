@@ -59,18 +59,6 @@ RSpec.describe AcceptLanguage::Parser do
 
     context "with quality values" do
       context "when using valid quality values" do
-        context "with short decimal notation" do
-          let(:raw_input) { "en-US;q=.8, fr;q=.123, de;q=1" }
-
-          it "accepts the short notation" do
-            expect(parser.languages_range).to eq(
-              "en-us" => BigDecimal("0.8"),
-              "fr"    => BigDecimal("0.123"),
-              "de"    => BigDecimal("1.0")
-            )
-          end
-        end
-
         context "with full decimal notation" do
           let(:raw_input) { "en-US;q=0.8, fr;q=0.123, de;q=1.0" }
 
@@ -161,13 +149,25 @@ RSpec.describe AcceptLanguage::Parser do
           end
         end
 
+        context "with shorthand notation (RFC 2616 non-compliant)" do
+          let(:raw_input) { "en-US;q=.8, fr;q=.123, de;q=1" }
+
+          it "rejects shorthand notation per RFC 2616 Section 3.9" do
+            # RFC 2616 requires: qvalue = ("0" ["." 0*3DIGIT]) | ("1" ["." 0*3("0")])
+            # Shorthand ".8" is not valid; must be "0.8"
+            expect(parser.languages_range).to eq(
+              "de" => BigDecimal("1.0")
+            )
+          end
+        end
+
         context "with mix of valid and invalid values" do
           let(:raw_input) { "da;q=1.0, en-GB;q=1.5, en;q=.7, fr;q=0.8888, de;q=0.9" }
 
           it "keeps only valid entries" do
+            # en-GB;q=1.5 invalid (>1), en;q=.7 invalid (shorthand), fr;q=0.8888 invalid (>3 decimals)
             expect(parser.languages_range).to eq(
               "da" => BigDecimal("1.0"),
-              "en" => BigDecimal("0.7"),
               "de" => BigDecimal("0.9")
             )
           end
