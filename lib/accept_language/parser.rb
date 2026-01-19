@@ -26,6 +26,17 @@ module AcceptLanguage
     #   qvalue = ( "0" [ "." 0*3DIGIT ] ) | ( "1" [ "." 0*3("0") ] )
     QVALUE_PATTERN = /\A(?:0(?:\.[0-9]{1,3})?|1(?:\.0{1,3})?)\z/
     # @api private
+    # Language tag pattern supporting BCP 47 (RFC 5646) alphanumeric subtags.
+    #
+    # RFC 2616 Section 3.10 references RFC 1766, which only allowed ALPHA in subtags.
+    # However, BCP 47 (the current standard) permits alphanumeric subtags:
+    #   subtag = 1*8alphanum
+    #   alphanum = ALPHA / DIGIT
+    #
+    # Examples of valid BCP 47 tags with numeric subtags:
+    #   - "de-CH-1996" (German, Switzerland, orthography variant 1996)
+    #   - "sl-IT-nedis" (Slovenian, Italy, Nadiza dialect)
+    #   - "zh-Hans-CN" (Chinese, Simplified script, China)
     LANGTAG_PATTERN = /\A(?:\*|[a-zA-Z]{1,8}(?:-[a-zA-Z0-9]{1,8})*)\z/
 
     # @api private

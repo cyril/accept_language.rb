@@ -253,6 +253,73 @@ RSpec.describe AcceptLanguage::Parser do
         end
       end
     end
+
+    context "with BCP 47 language tags" do
+      # BCP 47 (RFC 5646) extends RFC 1766 to allow alphanumeric subtags.
+      # This is important for variant subtags and script codes.
+
+      context "when using variant subtags with numbers" do
+        let(:raw_input) { "de-CH-1996;q=0.9, de-CH;q=0.8" }
+
+        it "accepts numeric variant subtags" do
+          expect(parser.languages_range).to eq(
+            "de-ch-1996" => BigDecimal("0.9"),
+            "de-ch"      => BigDecimal("0.8")
+          )
+        end
+      end
+
+      context "when using script subtags" do
+        let(:raw_input) { "zh-Hans-CN, zh-Hant-TW;q=0.9" }
+
+        it "accepts 4-letter script subtags" do
+          expect(parser.languages_range).to eq(
+            "zh-hans-cn" => BigDecimal("1.0"),
+            "zh-hant-tw" => BigDecimal("0.9")
+          )
+        end
+      end
+
+      context "when using complex BCP 47 tags" do
+        let(:raw_input) { "sl-IT-nedis;q=0.8, sl-nedis;q=0.7, sl;q=0.6" }
+
+        it "accepts dialect variant subtags" do
+          expect(parser.languages_range).to eq(
+            "sl-it-nedis" => BigDecimal("0.8"),
+            "sl-nedis"    => BigDecimal("0.7"),
+            "sl"          => BigDecimal("0.6")
+          )
+        end
+      end
+
+      context "when using registered variant with digits" do
+        let(:raw_input) { "de-1996, de-1901;q=0.5" }
+
+        it "accepts year-based variant subtags" do
+          # 1996 = German orthography reform, 1901 = traditional orthography
+          expect(parser.languages_range).to eq(
+            "de-1996" => BigDecimal("1.0"),
+            "de-1901" => BigDecimal("0.5")
+          )
+        end
+      end
+
+      context "when subtag exceeds 8 characters" do
+        let(:raw_input) { "en-verylongsubtag" }
+
+        it "rejects subtags longer than 8 characters" do
+          expect(parser.languages_range).to eq({})
+        end
+      end
+
+      context "when primary tag contains digits" do
+        let(:raw_input) { "e2-US" }
+
+        it "rejects primary tags with digits (BCP 47 requires ALPHA only)" do
+          expect(parser.languages_range).to eq({})
+        end
+      end
+    end
   end
 
   describe "#match" do

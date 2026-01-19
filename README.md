@@ -1,6 +1,6 @@
 # AcceptLanguage
 
-A lightweight, thread-safe Ruby library for parsing `Accept-Language` HTTP headers as defined in [RFC 2616](https://tools.ietf.org/html/rfc2616#section-14.4).
+A lightweight, thread-safe Ruby library for parsing `Accept-Language` HTTP headers as defined in [RFC 2616](https://tools.ietf.org/html/rfc2616#section-14.4), with full support for [BCP 47](https://tools.ietf.org/html/bcp47) language tags.
 
 [![Version](https://img.shields.io/github/v/tag/cyril/accept_language.rb?label=Version&logo=github)](https://github.com/cyril/accept_language.rb/tags)
 [![Yard documentation](https://img.shields.io/badge/Yard-documentation-blue.svg?logo=github)](https://rubydoc.info/github/cyril/accept_language.rb/main)
@@ -67,6 +67,24 @@ Matching is case-insensitive but preserves the case of the available language ta
 ```ruby
 AcceptLanguage.parse("en-GB").match("en-gb") # => "en-gb"
 AcceptLanguage.parse("en-gb").match("en-GB") # => "en-GB"
+```
+
+### BCP 47 support
+
+This library supports [BCP 47](https://tools.ietf.org/html/bcp47) language tags, including:
+
+- **Script subtags**: `zh-Hans` (Simplified Chinese), `zh-Hant` (Traditional Chinese)
+- **Region subtags**: `en-US`, `pt-BR`
+- **Variant subtags**: `sl-nedis` (Slovenian Nadiza dialect), `de-1996` (German orthography reform)
+
+```ruby
+# Script variants
+AcceptLanguage.parse("zh-Hans").match(:"zh-Hans-CN", :"zh-Hant-TW")
+# => :"zh-Hans-CN"
+
+# Orthography variants (numeric subtags)
+AcceptLanguage.parse("de-1996, de;q=0.9").match(:"de-CH-1996", :"de-CH")
+# => :"de-CH-1996"
 ```
 
 ## Rails integration
