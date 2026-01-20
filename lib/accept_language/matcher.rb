@@ -9,6 +9,10 @@ module AcceptLanguage
   # @note This class is intended for internal use by {Parser} and should not be instantiated directly.
   class Matcher
     # @api private
+    HYPHEN = "-"
+    # @api private
+    NIL_TAGS_ERROR = "Language tags cannot be nil"
+    # @api private
     WILDCARD = "*"
 
     # @api private
@@ -39,7 +43,7 @@ module AcceptLanguage
 
     # @api private
     def call(*available_langtags)
-      raise ::ArgumentError, "Language tags cannot be nil" if available_langtags.any?(&:nil?)
+      raise ::ArgumentError, NIL_TAGS_ERROR if available_langtags.any?(&:nil?)
 
       filtered_tags = drop_unacceptable(*available_langtags)
       return nil if filtered_tags.empty?
@@ -103,7 +107,7 @@ module AcceptLanguage
     # @param tag [String] The language-tag to test (downcased)
     # @return [Boolean] true if prefix matches tag per RFC 2616 rules
     def prefix_match?(prefix, tag)
-      tag == prefix || tag.start_with?("#{prefix}-")
+      tag == prefix || tag.start_with?(prefix + HYPHEN)
     end
   end
 end

@@ -14,6 +14,10 @@ module AcceptLanguage
     # @api private
     DEFAULT_QUALITY = 1000
     # @api private
+    DIGIT_ZERO = "0"
+    # @api private
+    DOT = "."
+    # @api private
     SEPARATOR = ","
     # @api private
     SPACE = " "
@@ -99,7 +103,7 @@ module AcceptLanguage
     #   qvalue_to_integer("0.123") # => 123
     #   qvalue_to_integer("0")     # => 0
     def qvalue_to_integer(quality)
-      quality.delete(".").ljust(4, "0").to_i
+      quality.delete(DOT).ljust(4, DIGIT_ZERO).to_i
     end
 
     def valid_quality?(quality)
