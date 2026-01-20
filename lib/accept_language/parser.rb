@@ -12,7 +12,7 @@ module AcceptLanguage
   # @see https://tools.ietf.org/html/rfc2616#section-14.4
   class Parser
     # @api private
-    DEFAULT_QUALITY = 1000
+    DEFAULT_QUALITY = 1_000
     # @api private
     DIGIT_ZERO = "0"
     # @api private
