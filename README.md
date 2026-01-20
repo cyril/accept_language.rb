@@ -1,20 +1,12 @@
 # AcceptLanguage
 
-A lightweight, thread-safe Ruby library for parsing `Accept-Language` HTTP headers as defined in [RFC 2616](https://tools.ietf.org/html/rfc2616#section-14.4), with full support for [BCP 47](https://tools.ietf.org/html/bcp47) language tags.
+A lightweight, thread-safe Ruby library for parsing the `Accept-Language` HTTP header as defined in [RFC 2616](https://tools.ietf.org/html/rfc2616#section-14.4), with full support for [BCP 47](https://tools.ietf.org/html/bcp47) language tags.
 
 [![Version](https://img.shields.io/github/v/tag/cyril/accept_language.rb?label=Version&logo=github)](https://github.com/cyril/accept_language.rb/tags)
 [![Yard documentation](https://img.shields.io/badge/Yard-documentation-blue.svg?logo=github)](https://rubydoc.info/github/cyril/accept_language.rb/main)
 ![Ruby](https://github.com/cyril/accept_language.rb/actions/workflows/ruby.yml/badge.svg?branch=main)
 ![RuboCop](https://github.com/cyril/accept_language.rb/actions/workflows/rubocop.yml/badge.svg?branch=main)
 [![License](https://img.shields.io/github/license/cyril/accept_language.rb?label=License&logo=github)](https://github.com/cyril/accept_language.rb/raw/main/LICENSE.md)
-
-## Features
-
-- Thread-safe
-- No framework dependencies
-- Case-insensitive matching
-- BCP 47 language tag support
-- Wildcard and exclusion handling
 
 ## Installation
 
@@ -25,64 +17,110 @@ gem "accept_language"
 ## Usage
 
 ```ruby
-AcceptLanguage.parse("en-GB, en;q=0.9").match(:en, :"en-GB")
-# => :"en-GB"
+AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7").match(:en, :da)
+# => :da
 ```
+
+## Behavior
 
 ### Quality values
 
-Quality values (q-values) indicate preference order from 0 to 1:
+Quality values (q-values) express relative preference, ranging from `0` (unacceptable) to `1` (most preferred). When omitted, the default is `1`.
 
 ```ruby
 parser = AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7")
 
-parser.match(:en, :da)      # => :da
-parser.match(:en, :"en-GB") # => :"en-GB"
-parser.match(:fr)           # => nil
+parser.match(:en, :da)      # => :da  (q=1 > q=0.8)
+parser.match(:en, :"en-GB") # => :"en-GB"  (q=0.8 > q=0.7)
+parser.match(:ja)           # => nil  (no match)
 ```
 
-### Language variants
+Per RFC 2616 Section 3.9, valid q-values have at most three decimal places: `0`, `0.7`, `0.85`, `1.000`. Invalid q-values are ignored.
 
-A generic language tag matches its regional variants, but not the reverse:
+### Identical quality values
+
+When multiple languages share the same q-value, the order of declaration in the header determines priority—the first declared language is preferred:
 
 ```ruby
-AcceptLanguage.parse("fr").match(:"fr-CH")    # => :"fr-CH"
-AcceptLanguage.parse("fr-CH").match(:fr)      # => nil
+AcceptLanguage.parse("en;q=0.8, fr;q=0.8").match(:en, :fr)
+# => :en  (declared first)
+
+AcceptLanguage.parse("fr;q=0.8, en;q=0.8").match(:en, :fr)
+# => :fr  (declared first)
 ```
 
-### Wildcards and exclusions
+### Prefix matching
 
-The wildcard `*` matches any language. A q-value of 0 explicitly excludes a language:
+Per RFC 2616 Section 14.4, a language-range matches any language-tag that exactly equals the range or begins with the range followed by `-`:
 
 ```ruby
-AcceptLanguage.parse("de-DE, *;q=0.5").match(:fr)  # => :fr
-AcceptLanguage.parse("*, en;q=0").match(:en)       # => nil
-AcceptLanguage.parse("*, en;q=0").match(:fr)       # => :fr
+AcceptLanguage.parse("zh").match(:"zh-TW")
+# => :"zh-TW"  ("zh" matches "zh-TW")
+
+AcceptLanguage.parse("zh-TW").match(:zh)
+# => nil  ("zh-TW" does not match "zh")
 ```
 
-### Case sensitivity
-
-Matching is case-insensitive but preserves the case of the available language tag:
+Note that prefix matching follows hyphen boundaries—`zh` does not match `zhx`:
 
 ```ruby
-AcceptLanguage.parse("en-GB").match("en-gb") # => "en-gb"
-AcceptLanguage.parse("en-gb").match("en-GB") # => "en-GB"
+AcceptLanguage.parse("zh").match(:zhx)
+# => nil  ("zhx" is a different language code)
 ```
 
-### BCP 47 support
+### Wildcards
 
-This library supports [BCP 47](https://tools.ietf.org/html/bcp47) language tags, including:
-
-- **Script subtags**: `zh-Hans` (Simplified Chinese), `zh-Hant` (Traditional Chinese)
-- **Region subtags**: `en-US`, `pt-BR`
-- **Variant subtags**: `sl-nedis` (Slovenian Nadiza dialect), `de-1996` (German orthography reform)
+The wildcard `*` matches any language not matched by another range:
 
 ```ruby
-# Script variants
-AcceptLanguage.parse("zh-Hans").match(:"zh-Hans-CN", :"zh-Hant-TW")
-# => :"zh-Hans-CN"
+AcceptLanguage.parse("de, *;q=0.5").match(:ja)
+# => :ja  (matched by wildcard)
 
-# Orthography variants (numeric subtags)
+AcceptLanguage.parse("de, *;q=0.5").match(:de, :ja)
+# => :de  (explicit match preferred over wildcard)
+```
+
+### Exclusions
+
+A q-value of `0` explicitly excludes a language:
+
+```ruby
+AcceptLanguage.parse("*, en;q=0").match(:en)
+# => nil  (English excluded)
+
+AcceptLanguage.parse("*, en;q=0").match(:ja)
+# => :ja  (matched by wildcard)
+```
+
+Exclusions apply to prefix matches:
+
+```ruby
+AcceptLanguage.parse("*, en;q=0").match(:"en-GB")
+# => nil  (en-GB excluded via "en" prefix)
+```
+
+### Case insensitivity
+
+Matching is case-insensitive per RFC 2616, but the original case of available language tags is preserved:
+
+```ruby
+AcceptLanguage.parse("EN-GB").match(:"en-gb")
+# => :"en-gb"
+
+AcceptLanguage.parse("en-gb").match(:"EN-GB")
+# => :"EN-GB"
+```
+
+### BCP 47 language tags
+
+Full support for [BCP 47](https://tools.ietf.org/html/bcp47) language tags:
+
+```ruby
+# Script subtags
+AcceptLanguage.parse("zh-Hant").match(:"zh-Hant-TW", :"zh-Hans-CN")
+# => :"zh-Hant-TW"
+
+# Variant subtags
 AcceptLanguage.parse("de-1996, de;q=0.9").match(:"de-CH-1996", :"de-CH")
 # => :"de-CH-1996"
 ```
@@ -118,13 +156,15 @@ end
 
 ## Documentation
 
-- [API Documentation](https://rubydoc.info/github/cyril/accept_language.rb/main)
+- [API documentation](https://rubydoc.info/github/cyril/accept_language.rb/main)
+- [RFC 2616 Section 14.4](https://tools.ietf.org/html/rfc2616#section-14.4)
+- [BCP 47](https://tools.ietf.org/html/bcp47)
 - [Language negotiation with Ruby](https://dev.to/cyri_/language-negotiation-with-ruby-5166)
 - [Rubyで言語ネゴシエーション](https://qiita.com/cyril/items/45dc233edb7be9d614e7)
 
 ## Versioning
 
-This library follows [Semantic Versioning 2.0.0](https://semver.org/).
+This library follows [Semantic Versioning 2.0](https://semver.org/).
 
 ## License
 
