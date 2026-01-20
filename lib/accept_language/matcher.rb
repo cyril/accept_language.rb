@@ -17,7 +17,6 @@ module AcceptLanguage
     # @api private
     def initialize(**languages_range)
       @excluded_langtags = ::Set[]
-      @preferred_langtags = []
 
       languages_range.each do |langtag, quality|
         next unless quality.zero? && !wildcard?(langtag)
