@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "bigdecimal"
-
 module AcceptLanguage
   # Parses Accept-Language header fields into structured data, extracting language tags
   # and their quality values (q-values). Validates input according to RFC 2616 specifications
@@ -14,7 +12,7 @@ module AcceptLanguage
   # @see https://tools.ietf.org/html/rfc2616#section-14.4
   class Parser
     # @api private
-    DEFAULT_QUALITY = "1"
+    DEFAULT_QUALITY = 1000
     # @api private
     SEPARATOR = ","
     # @api private
@@ -40,7 +38,7 @@ module AcceptLanguage
     LANGTAG_PATTERN = /\A(?:\*|[a-zA-Z]{1,8}(?:-[a-zA-Z0-9]{1,8})*)\z/
 
     # @api private
-    # @return [Hash<String, BigDecimal>] Parsed language tags and their quality values
+    # @return [Hash<String, Integer>] Parsed language tags and their quality values (0-1000)
     attr_reader :languages_range
 
     # Initializes a new Parser instance by importing and processing the given Accept-Language header field.
@@ -71,11 +69,29 @@ module AcceptLanguage
         tag, quality = lang.split(SUFFIX)
         next hash unless valid_tag?(tag)
 
-        quality = DEFAULT_QUALITY if quality.nil?
-        next hash unless valid_quality?(quality)
+        next hash unless quality.nil? || valid_quality?(quality)
 
-        hash.merge(tag => BigDecimal(quality))
+        hash.merge(tag => quality.nil? ? DEFAULT_QUALITY : qvalue_to_integer(quality))
       end
+    end
+
+    # Converts a validated qvalue string to an integer in the range 0-1000.
+    #
+    # The qvalue is already validated by QVALUE_PATTERN to match RFC 2616 Section 3.9:
+    #   qvalue = ( "0" [ "." 0*3DIGIT ] ) | ( "1" [ "." 0*3("0") ] )
+    #
+    # @param quality [String] A validated qvalue string (e.g., "1", "0.8", "0.123")
+    # @return [Integer] The quality value scaled to 0-1000
+    #
+    # @example
+    #   qvalue_to_integer("1")     # => 1000
+    #   qvalue_to_integer("1.0")   # => 1000
+    #   qvalue_to_integer("0.8")   # => 800
+    #   qvalue_to_integer("0.85")  # => 850
+    #   qvalue_to_integer("0.123") # => 123
+    #   qvalue_to_integer("0")     # => 0
+    def qvalue_to_integer(quality)
+      quality.delete(".").ljust(4, "0").to_i
     end
 
     def valid_quality?(quality)

@@ -27,8 +27,7 @@ module AcceptLanguage
           # Adding "*" to excluded_langtags would break prefix_match? logic.
           @excluded_langtags << langtag unless wildcard?(langtag)
         else
-          level = (quality * 1_000).to_i
-          langtags[level] = langtag
+          langtags[quality] = langtag
         end
       end
 

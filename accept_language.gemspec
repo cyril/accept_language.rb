@@ -15,6 +15,4 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = ">= 3.2.0"
 
   spec.metadata["rubygems_mfa_required"] = "true"
-
-  spec.add_dependency "bigdecimal"
 end

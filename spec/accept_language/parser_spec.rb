@@ -28,8 +28,8 @@ RSpec.describe AcceptLanguage::Parser do
 
         it "handles the spaces correctly" do
           expect(parser.languages_range).to eq(
-            "en-us" => BigDecimal("0.8"),
-            "fr"    => BigDecimal("0.7")
+            "en-us" => 800,
+            "fr"    => 700
           )
         end
       end
@@ -39,8 +39,8 @@ RSpec.describe AcceptLanguage::Parser do
 
         it "ignores malformed tags" do
           expect(parser.languages_range).to eq(
-            "fr"    => BigDecimal("0.7"),
-            "en-us" => BigDecimal("1.0")
+            "fr"    => 700,
+            "en-us" => 1000
           )
         end
       end
@@ -50,8 +50,8 @@ RSpec.describe AcceptLanguage::Parser do
 
         it "handles uppercase Q correctly" do
           expect(parser.languages_range).to eq(
-            "en-us" => BigDecimal("0.8"),
-            "fr"    => BigDecimal("0.7")
+            "en-us" => 800,
+            "fr"    => 700
           )
         end
       end
@@ -64,9 +64,9 @@ RSpec.describe AcceptLanguage::Parser do
 
           it "accepts the full notation" do
             expect(parser.languages_range).to eq(
-              "en-us" => BigDecimal("0.8"),
-              "fr"    => BigDecimal("0.123"),
-              "de"    => BigDecimal("1.0")
+              "en-us" => 800,
+              "fr"    => 123,
+              "de"    => 1000
             )
           end
         end
@@ -76,8 +76,8 @@ RSpec.describe AcceptLanguage::Parser do
 
           it "assigns default quality value of 1.0" do
             expect(parser.languages_range).to eq(
-              "en-us" => BigDecimal("1.0"),
-              "fr"    => BigDecimal("0.8")
+              "en-us" => 1000,
+              "fr"    => 800
             )
           end
         end
@@ -87,9 +87,9 @@ RSpec.describe AcceptLanguage::Parser do
 
           it "includes zero quality entries" do
             expect(parser.languages_range).to eq(
-              "en-us" => BigDecimal("0.8"),
-              "fr"    => BigDecimal("0.0"),
-              "de"    => BigDecimal("0.7")
+              "en-us" => 800,
+              "fr"    => 0,
+              "de"    => 700
             )
           end
         end
@@ -99,10 +99,10 @@ RSpec.describe AcceptLanguage::Parser do
 
           it "includes all zero quality entries" do
             expect(parser.languages_range).to eq(
-              "en-us" => BigDecimal("0.8"),
-              "fr"    => BigDecimal("0.0"),
-              "de"    => BigDecimal("0.0"),
-              "it"    => BigDecimal("0.7")
+              "en-us" => 800,
+              "fr"    => 0,
+              "de"    => 0,
+              "it"    => 700
             )
           end
         end
@@ -114,7 +114,7 @@ RSpec.describe AcceptLanguage::Parser do
 
           it "ignores the invalid entry" do
             expect(parser.languages_range).to eq(
-              "fr" => BigDecimal("0.8")
+              "fr" => 800
             )
           end
         end
@@ -124,7 +124,7 @@ RSpec.describe AcceptLanguage::Parser do
 
           it "ignores the invalid entry" do
             expect(parser.languages_range).to eq(
-              "fr" => BigDecimal("0.8")
+              "fr" => 800
             )
           end
         end
@@ -134,7 +134,7 @@ RSpec.describe AcceptLanguage::Parser do
 
           it "ignores the invalid entry" do
             expect(parser.languages_range).to eq(
-              "fr" => BigDecimal("0.8")
+              "fr" => 800
             )
           end
         end
@@ -144,7 +144,7 @@ RSpec.describe AcceptLanguage::Parser do
 
           it "ignores all invalid entries" do
             expect(parser.languages_range).to eq(
-              "fr" => BigDecimal("0.8")
+              "fr" => 800
             )
           end
         end
@@ -156,7 +156,7 @@ RSpec.describe AcceptLanguage::Parser do
             # RFC 2616 requires: qvalue = ("0" ["." 0*3DIGIT]) | ("1" ["." 0*3("0")])
             # Shorthand ".8" is not valid; must be "0.8"
             expect(parser.languages_range).to eq(
-              "de" => BigDecimal("1.0")
+              "de" => 1000
             )
           end
         end
@@ -167,8 +167,8 @@ RSpec.describe AcceptLanguage::Parser do
           it "keeps only valid entries" do
             # en-GB;q=1.5 invalid (>1), en;q=.7 invalid (shorthand), fr;q=0.8888 invalid (>3 decimals)
             expect(parser.languages_range).to eq(
-              "da" => BigDecimal("1.0"),
-              "de" => BigDecimal("0.9")
+              "da" => 1000,
+              "de" => 900
             )
           end
         end
@@ -181,11 +181,11 @@ RSpec.describe AcceptLanguage::Parser do
 
         it "processes the wildcard correctly" do
           expect(parser.languages_range).to eq(
-            "fr"    => BigDecimal("1.0"),
-            "fr-ch" => BigDecimal("0.9"),
-            "en"    => BigDecimal("0.8"),
-            "de"    => BigDecimal("0.7"),
-            "*"     => BigDecimal("0.5")
+            "fr"    => 1000,
+            "fr-ch" => 900,
+            "en"    => 800,
+            "de"    => 700,
+            "*"     => 500
           )
         end
       end
@@ -195,7 +195,7 @@ RSpec.describe AcceptLanguage::Parser do
 
         it "treats wildcard with default quality" do
           expect(parser.languages_range).to eq(
-            "*" => BigDecimal("1.0")
+            "*" => 1000
           )
         end
       end
@@ -247,8 +247,8 @@ RSpec.describe AcceptLanguage::Parser do
 
         it "keeps only valid tags" do
           expect(parser.languages_range).to eq(
-            "en" => BigDecimal("1.0"),
-            "fr" => BigDecimal("0.7")
+            "en" => 1000,
+            "fr" => 700
           )
         end
       end
@@ -263,8 +263,8 @@ RSpec.describe AcceptLanguage::Parser do
 
         it "accepts numeric variant subtags" do
           expect(parser.languages_range).to eq(
-            "de-ch-1996" => BigDecimal("0.9"),
-            "de-ch"      => BigDecimal("0.8")
+            "de-ch-1996" => 900,
+            "de-ch"      => 800
           )
         end
       end
@@ -274,8 +274,8 @@ RSpec.describe AcceptLanguage::Parser do
 
         it "accepts 4-letter script subtags" do
           expect(parser.languages_range).to eq(
-            "zh-hans-cn" => BigDecimal("1.0"),
-            "zh-hant-tw" => BigDecimal("0.9")
+            "zh-hans-cn" => 1000,
+            "zh-hant-tw" => 900
           )
         end
       end
@@ -285,9 +285,9 @@ RSpec.describe AcceptLanguage::Parser do
 
         it "accepts dialect variant subtags" do
           expect(parser.languages_range).to eq(
-            "sl-it-nedis" => BigDecimal("0.8"),
-            "sl-nedis"    => BigDecimal("0.7"),
-            "sl"          => BigDecimal("0.6")
+            "sl-it-nedis" => 800,
+            "sl-nedis"    => 700,
+            "sl"          => 600
           )
         end
       end
@@ -298,8 +298,8 @@ RSpec.describe AcceptLanguage::Parser do
         it "accepts year-based variant subtags" do
           # 1996 = German orthography reform, 1901 = traditional orthography
           expect(parser.languages_range).to eq(
-            "de-1996" => BigDecimal("1.0"),
-            "de-1901" => BigDecimal("0.5")
+            "de-1996" => 1000,
+            "de-1901" => 500
           )
         end
       end
