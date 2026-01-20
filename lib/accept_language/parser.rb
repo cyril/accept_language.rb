@@ -65,14 +65,22 @@ module AcceptLanguage
     private
 
     def import(field)
-      "#{field}".downcase.delete(SPACE).split(SEPARATOR).inject({}) do |hash, lang|
+      "#{field}".downcase.delete(SPACE).split(SEPARATOR).each_with_object({}) do |lang, hash|
         tag, quality = lang.split(SUFFIX)
-        next hash unless valid_tag?(tag)
+        next unless valid_tag?(tag)
 
-        next hash unless quality.nil? || valid_quality?(quality)
+        quality_value = parse_quality(quality)
+        next if quality_value.nil?
 
-        hash.merge(tag => quality.nil? ? DEFAULT_QUALITY : qvalue_to_integer(quality))
+        hash[tag] = quality_value
       end
+    end
+
+    def parse_quality(quality)
+      return DEFAULT_QUALITY if quality.nil?
+      return unless valid_quality?(quality)
+
+      qvalue_to_integer(quality)
     end
 
     # Converts a validated qvalue string to an integer in the range 0-1000.
