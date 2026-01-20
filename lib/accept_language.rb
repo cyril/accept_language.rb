@@ -165,8 +165,6 @@
 #
 #     def detect_locale(env)
 #       header = env["HTTP_ACCEPT_LANGUAGE"]
-#       return unless header
-#
 #       AcceptLanguage.parse(header).match(*@available_locales)
 #     end
 #   end
@@ -219,14 +217,17 @@ module AcceptLanguage
   # silently ignored, allowing the parser to handle real-world headers
   # that may not strictly conform to specifications.
   #
-  # @param field [String, #to_s] the Accept-Language header field value.
+  # @param field [String, nil] the Accept-Language header field value.
   #   Typically obtained from +request.headers["HTTP_ACCEPT_LANGUAGE"]+ in
-  #   Rails or +env["HTTP_ACCEPT_LANGUAGE"]+ in Rack applications. The value
-  #   is converted to a String via +to_s+ if it isn't one already.
+  #   Rails or +env["HTTP_ACCEPT_LANGUAGE"]+ in Rack applications.
+  #   When +nil+ is passed (header absent), it is treated as an empty string,
+  #   resulting in a parser that matches no languages.
   #
   # @return [Parser] a parser instance configured with the language preferences
   #   from the header. Call {Parser#match} on this instance to find the best
   #   matching language from your available options.
+  #
+  # @raise [TypeError] if +field+ is neither a String nor +nil+
   #
   # @example Basic parsing and matching
   #   parser = AcceptLanguage.parse("en-GB, en;q=0.9, fr;q=0.8")

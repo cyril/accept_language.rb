@@ -75,8 +75,8 @@ module AcceptLanguage
   # - Empty or +nil+ input results in an empty languages_range
   # - Malformed entries (missing separators, etc.) are skipped
   #
-  # This approach ensures the parser never raises exceptions during normal
-  # operation and always returns a usable result.
+  # However, the parser is strict about input types: only +String+ or +nil+
+  # are accepted for the +field+ parameter.
   #
   # @example Basic usage
   #   parser = AcceptLanguage::Parser.new("da, en-GB;q=0.8, en;q=0.7")
@@ -124,6 +124,15 @@ module AcceptLanguage
     # @api private
     # @return [String] "."
     DOT = "."
+
+    # Error message raised when +field+ argument is not a String or nil.
+    #
+    # This guards against accidental non-String values being passed to the
+    # parser, which would cause unexpected behavior during parsing.
+    #
+    # @api private
+    # @return [String]
+    FIELD_TYPE_ERROR = "Field must be a String or nil"
 
     # The comma character that separates language-range entries in the
     # Accept-Language header field value.
@@ -242,21 +251,23 @@ module AcceptLanguage
     #
     # == Parsing Process
     #
-    # 1. Convert input to string (handles +nil+ gracefully)
-    # 2. Normalize to lowercase for case-insensitive matching
-    # 3. Remove all spaces (whitespace is insignificant per RFC 2616)
-    # 4. Split on commas to get individual entries
-    # 5. For each entry:
+    # 1. Validate that input is a String or nil
+    # 2. Convert nil to empty string
+    # 3. Normalize to lowercase for case-insensitive matching
+    # 4. Remove all spaces (whitespace is insignificant per RFC 2616)
+    # 5. Split on commas to get individual entries
+    # 6. For each entry:
     #    a. Split on +;q=+ to separate tag from quality
     #    b. Validate the language tag
     #    c. Validate and parse the quality value (default 1.0 if absent)
     #    d. Store valid entries in the languages_range hash
     #
-    # @param field [String, #to_s, nil] the Accept-Language header field value.
+    # @param field [String, nil] the Accept-Language header field value.
     #   Common sources include +request.env["HTTP_ACCEPT_LANGUAGE"]+ in Rack
-    #   applications or +request.headers["Accept-Language"]+ in Rails. The
-    #   value is converted to a String via string interpolation, so +nil+
-    #   and other types are handled gracefully.
+    #   applications or +request.headers["Accept-Language"]+ in Rails.
+    #   When +nil+ is passed (header absent), it is treated as an empty string.
+    #
+    # @raise [TypeError] if +field+ is neither a String nor nil
     #
     # @example Standard header
     #   Parser.new("en-US, en;q=0.9, fr;q=0.8")
@@ -277,6 +288,8 @@ module AcceptLanguage
     #
     # @see #languages_range
     def initialize(field)
+      raise ::TypeError, FIELD_TYPE_ERROR unless field.nil? || field.is_a?(::String)
+
       @languages_range = import(field)
     end
 
@@ -305,20 +318,18 @@ module AcceptLanguage
     # == Return Value Preservation
     #
     # The method returns the language tag exactly as provided in the
-    # +available_langtags+ argument, preserving the original type (String
-    # or Symbol) and case. This is important for direct use with +I18n.locale+
-    # and similar APIs.
+    # +available_langtags+ argument, preserving the original case. This is
+    # important for direct use with +I18n.locale+ and similar APIs.
     #
-    # @param available_langtags [Array<String, Symbol>] the languages your
+    # @param available_langtags [Array<Symbol>] the languages your
     #   application supports. These are typically your +I18n.available_locales+
-    #   or a similar list. Both String and Symbol values are accepted and
-    #   the original type is preserved in the return value.
+    #   or a similar list.
     #
-    # @return [String, Symbol, nil] the best matching language tag from the
+    # @return [Symbol, nil] the best matching language tag from the
     #   available options, in its original form as passed to this method.
     #   Returns +nil+ if no acceptable match is found.
     #
-    # @raise [ArgumentError] if any element in +available_langtags+ is +nil+
+    # @raise [TypeError] if any element in +available_langtags+ is not a Symbol
     #
     # @example Basic matching
     #   parser = Parser.new("da, en-GB;q=0.8, en;q=0.7")
@@ -366,7 +377,7 @@ module AcceptLanguage
     # Parses the Accept-Language header field value into a hash of language
     # tags and their quality values.
     #
-    # @param field [String, #to_s, nil] the raw header field value
+    # @param field [String, nil] the raw header field value
     # @return [Hash{String => Integer}] downcased language tags mapped to
     #   quality values (0-1000)
     def import(field)

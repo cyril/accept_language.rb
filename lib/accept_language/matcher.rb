@@ -95,14 +95,14 @@ module AcceptLanguage
     # @return [String] "-"
     HYPHEN = "-"
 
-    # Error message raised when +nil+ is passed as an available language tag.
+    # Error message raised when an available language tag is not a Symbol.
     #
-    # This guards against accidental +nil+ values in the available languages
+    # This guards against accidental non-Symbol values in the available languages
     # array, which would cause unexpected behavior during matching.
     #
     # @api private
     # @return [String]
-    NIL_LANGTAG_ERROR = "Language tag cannot be nil"
+    LANGTAG_TYPE_ERROR = "Language tag must be a Symbol"
 
     # The wildcard character that matches any language not explicitly listed.
     #
@@ -223,15 +223,14 @@ module AcceptLanguage
     #
     # == Return Value
     #
-    # The returned value preserves the exact form (type and case) of the
-    # matched element from +available_langtags+. This is important for
-    # direct use with APIs like +I18n.locale=+ that may be case-sensitive
-    # or type-sensitive.
+    # The returned value preserves the exact form (case) of the matched
+    # element from +available_langtags+. This is important for direct use
+    # with APIs like +I18n.locale=+ that may be case-sensitive.
     #
     # @api private
-    # @param available_langtags [Array<String, Symbol>] languages to match against
-    # @return [String, Symbol, nil] the best matching language, or +nil+
-    # @raise [ArgumentError] if any available language tag is +nil+
+    # @param available_langtags [Array<Symbol>] languages to match against
+    # @return [Symbol, nil] the best matching language, or +nil+
+    # @raise [TypeError] if any available language tag is not a Symbol
     #
     # @example Basic matching
     #   matcher = Matcher.new("en" => 1000, "fr" => 800)
@@ -258,12 +257,12 @@ module AcceptLanguage
 
     # Iterates through preferred languages to find the first match.
     #
-    # @param available_langtags [Set<String, Symbol>] pre-filtered available tags
-    # @return [String, Symbol, nil] the matched tag or nil
+    # @param available_langtags [Set<String>] pre-filtered available tags
+    # @return [Symbol, nil] the matched tag or nil
     def find_best_match(available_langtags)
       preferred_langtags.each do |preferred_tag|
         match = match_langtag(preferred_tag, available_langtags)
-        return match if match
+        return :"#{match}" unless match.nil?
       end
 
       nil
@@ -274,8 +273,8 @@ module AcceptLanguage
     # Handles both wildcard and specific language tags differently.
     #
     # @param preferred_tag [String] the preferred language tag to match
-    # @param available_langtags [Set<String, Symbol>] available tags to search
-    # @return [String, Symbol, nil] the matched tag or nil
+    # @param available_langtags [Set<String>] available tags to search
+    # @return [String, nil] the matched tag or nil
     def match_langtag(preferred_tag, available_langtags)
       if wildcard?(preferred_tag)
         any_other_langtag(*available_langtags)
@@ -287,10 +286,10 @@ module AcceptLanguage
     # Finds an available language that matches via exact or prefix match.
     #
     # @param preferred_tag [String] the preferred tag (downcased)
-    # @param available_langtags [Set<String, Symbol>] available tags
-    # @return [String, Symbol, nil] the first matching tag or nil
+    # @param available_langtags [Set<String>] available tags
+    # @return [String, nil] the first matching tag or nil
     def find_matching_tag(preferred_tag, available_langtags)
-      available_langtags.find { |tag| prefix_match?(preferred_tag, String(tag.downcase)) }
+      available_langtags.find { |tag| prefix_match?(preferred_tag, tag) }
     end
 
     # Finds an available language for wildcard matching.
@@ -299,14 +298,13 @@ module AcceptLanguage
     # listed preferred language tag. This implements the RFC 2616 semantics
     # where +*+ matches "any language not matched by another range".
     #
-    # @param available_langtags [Array<String, Symbol>] available tags
-    # @return [String, Symbol, nil] the first non-matching tag or nil
+    # @param available_langtags [Array<String>] available tags
+    # @return [String, nil] the first non-matching tag or nil
     def any_other_langtag(*available_langtags)
       langtags = preferred_langtags - [WILDCARD]
 
       available_langtags.find do |available_langtag|
-        available_downcased = available_langtag.downcase
-        langtags.none? { |tag| prefix_match?(tag, String(available_downcased)) }
+        langtags.none? { |tag| prefix_match?(tag, available_langtag) }
       end
     end
 
@@ -315,24 +313,24 @@ module AcceptLanguage
     # Uses prefix matching for exclusions, so excluding +en+ also excludes
     # +en-US+, +en-GB+, etc.
     #
-    # @param available_langtags [Array<String, Symbol>] all available tags
-    # @return [Set<String, Symbol>] tags not matching any exclusion
-    # @raise [ArgumentError] if any tag is nil
+    # @param available_langtags [Array<Symbol>] all available tags
+    # @return [Set<String>] tags not matching any exclusion
+    # @raise [TypeError] if any tag is not a Symbol
     def drop_unacceptable(*available_langtags)
       available_langtags.each_with_object(::Set[]) do |available_langtag, langtags|
-        raise ::ArgumentError, NIL_LANGTAG_ERROR if available_langtag.nil?
+        raise ::TypeError, LANGTAG_TYPE_ERROR unless available_langtag.is_a?(::Symbol)
 
+        available_langtag = "#{available_langtag}"
         langtags << available_langtag unless unacceptable?(available_langtag)
       end
     end
 
     # Checks if a language tag is explicitly excluded.
     #
-    # @param langtag [String, Symbol] the tag to check
+    # @param langtag [String] the tag to check (as string)
     # @return [Boolean] true if the tag matches any exclusion
     def unacceptable?(langtag)
-      langtag_downcased = langtag.downcase
-      excluded_langtags.any? { |excluded_tag| prefix_match?(excluded_tag, String(langtag_downcased)) }
+      excluded_langtags.any? { |excluded_tag| prefix_match?(excluded_tag, langtag) }
     end
 
     # Checks if a value is the wildcard character.
@@ -358,25 +356,32 @@ module AcceptLanguage
     # - +en+ does NOT match +eng+ (no hyphen after prefix)
     # - +en-US+ does NOT match +en+ (prefix is longer than tag)
     #
+    # Matching is case-insensitive per RFC 2616, using +casecmp?+ for
+    # efficient comparison without allocating new strings.
+    #
     # @param prefix [String] the language-range to match (downcased)
-    # @param tag [String] the language-tag to test (downcased)
+    # @param tag [String] the language-tag to test (any case)
     # @return [Boolean] true if prefix matches tag per RFC 2616 rules
     #
     # @example Exact matches
     #   prefix_match?("en", "en")       # => true
-    #   prefix_match?("en-us", "en-us") # => true
+    #   prefix_match?("en", "EN")       # => true
+    #   prefix_match?("en-us", "en-US") # => true
     #
     # @example Prefix matches
     #   prefix_match?("en", "en-us")    # => true
-    #   prefix_match?("en", "en-gb")    # => true
-    #   prefix_match?("zh", "zh-hant-tw") # => true
+    #   prefix_match?("en", "en-GB")    # => true
+    #   prefix_match?("zh", "zh-Hant-TW") # => true
     #
     # @example Non-matches
     #   prefix_match?("en-us", "en")    # => false (prefix longer than tag)
     #   prefix_match?("en", "eng")      # => false (no hyphen boundary)
     #   prefix_match?("en", "fr")       # => false (different language)
     def prefix_match?(prefix, tag)
-      tag == prefix || tag.start_with?(prefix + HYPHEN)
+      return true if tag.casecmp?(prefix)
+      return false if tag.length <= prefix.length
+
+      tag[0, prefix.length].casecmp?(prefix) && tag[prefix.length] == HYPHEN
     end
   end
 end
