@@ -267,6 +267,93 @@ RSpec.describe AcceptLanguage::Matcher do
     end
   end
 
+  describe "Identical quality values" do
+    # When multiple languages have the same qvalue, the order of declaration
+    # in the Accept-Language header should be preserved (first declared wins).
+
+    context "when two languages have the same qvalue" do
+      let(:available_langtags) { %i[en fr] }
+
+      context "when English is declared first" do
+        let(:field) { "en;q=0.8, fr;q=0.8" }
+
+        it "prefers English (declared first)" do
+          expect(best_match).to eq :en
+        end
+      end
+
+      context "when French is declared first" do
+        let(:field) { "fr;q=0.8, en;q=0.8" }
+
+        it "prefers French (declared first)" do
+          expect(best_match).to eq :fr
+        end
+      end
+    end
+
+    context "when three languages have the same qvalue" do
+      let(:field) { "de;q=0.8, en;q=0.8, fr;q=0.8" }
+      let(:available_langtags) { %i[fr en de] }
+
+      it "prefers German (declared first)" do
+        expect(best_match).to eq :de
+      end
+
+      context "when German is not available" do
+        let(:available_langtags) { %i[fr en] }
+
+        it "prefers English (declared second)" do
+          expect(best_match).to eq :en
+        end
+      end
+
+      context "when only French is available" do
+        let(:available_langtags) { %i[fr] }
+
+        it "returns French" do
+          expect(best_match).to eq :fr
+        end
+      end
+    end
+
+    context "when mixed with different quality values" do
+      let(:field) { "da, en;q=0.8, fr;q=0.8, de;q=0.7" }
+
+      context "when all languages are available" do
+        let(:available_langtags) { %i[de fr en da] }
+
+        it "prefers Danish (highest qvalue)" do
+          expect(best_match).to eq :da
+        end
+      end
+
+      context "when Danish is not available" do
+        let(:available_langtags) { %i[de fr en] }
+
+        it "prefers English (same qvalue as French, but declared first)" do
+          expect(best_match).to eq :en
+        end
+      end
+
+      context "when only German is available" do
+        let(:available_langtags) { %i[de] }
+
+        it "returns German (lowest qvalue but only option)" do
+          expect(best_match).to eq :de
+        end
+      end
+    end
+
+    context "when all languages have implicit qvalue of 1" do
+      let(:field) { "en, fr, de" }
+      let(:available_langtags) { %i[de fr en] }
+
+      it "prefers English (declared first)" do
+        expect(best_match).to eq :en
+      end
+    end
+  end
+
   describe "Type-insensitive" do
     let(:available_langtags) { [available_langtag] }
     let(:field) { "en-NZ" }

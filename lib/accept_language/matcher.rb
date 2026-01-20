@@ -17,21 +17,25 @@ module AcceptLanguage
     # @api private
     def initialize(**languages_range)
       @excluded_langtags = ::Set[]
-      langtags = []
+      @preferred_langtags = []
 
       languages_range.each do |langtag, quality|
-        if quality.zero?
-          # Exclude specific language tags, but NOT the wildcard.
-          # When "*;q=0" is specified, all non-listed languages become
-          # unacceptable implicitly (they won't match any preferred_langtags).
-          # Adding "*" to excluded_langtags would break prefix_match? logic.
-          @excluded_langtags << langtag unless wildcard?(langtag)
-        else
-          langtags[quality] = langtag
-        end
+        next unless quality.zero? && !wildcard?(langtag)
+
+        # Exclude specific language tags, but NOT the wildcard.
+        # When "*;q=0" is specified, all non-listed languages become
+        # unacceptable implicitly (they won't match any preferred_langtags).
+        # Adding "*" to excluded_langtags would break prefix_match? logic.
+        @excluded_langtags << langtag
       end
 
-      @preferred_langtags = langtags.compact.reverse
+      # Sort by descending quality. Ruby's sort_by is stable, so languages
+      # with identical quality values preserve their original order from
+      # the Accept-Language header (first declared = higher priority).
+      @preferred_langtags = languages_range
+                            .reject { |_, quality| quality.zero? }
+                            .sort_by { |_, quality| -quality }
+                            .map(&:first)
     end
 
     # @api private
