@@ -125,7 +125,37 @@ AcceptLanguage.parse("de-1996, de;q=0.9").match(:"de-CH-1996", :"de-CH")
 # => :"de-CH-1996"
 ```
 
-## Rails integration
+## Integration examples
+
+### Rack
+
+```ruby
+# config.ru
+class LocaleMiddleware
+  def initialize(app, available_locales:, default_locale:)
+    @app = app
+    @available_locales = available_locales
+    @default_locale = default_locale
+  end
+
+  def call(env)
+    locale = detect_locale(env) || @default_locale
+    env["rack.locale"] = locale
+    @app.call(env)
+  end
+
+  private
+
+  def detect_locale(env)
+    header = env["HTTP_ACCEPT_LANGUAGE"]
+    return unless header
+
+    AcceptLanguage.parse(header).match(*@available_locales)
+  end
+end
+```
+
+### Ruby on Rails
 
 ```ruby
 # app/controllers/application_controller.rb
