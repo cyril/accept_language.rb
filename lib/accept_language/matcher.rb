@@ -11,7 +11,7 @@ module AcceptLanguage
     # @api private
     HYPHEN = "-"
     # @api private
-    NIL_TAGS_ERROR = "Language tags cannot be nil"
+    NIL_LANGTAG_ERROR = "Language tag cannot be nil"
     # @api private
     WILDCARD = "*"
 
@@ -43,10 +43,8 @@ module AcceptLanguage
 
     # @api private
     def call(*available_langtags)
-      raise ::ArgumentError, NIL_TAGS_ERROR if available_langtags.any?(&:nil?)
-
       filtered_tags = drop_unacceptable(*available_langtags)
-      return nil if filtered_tags.empty?
+      return if filtered_tags.empty?
 
       find_best_match(filtered_tags)
     end
@@ -85,6 +83,8 @@ module AcceptLanguage
 
     def drop_unacceptable(*available_langtags)
       available_langtags.each_with_object(::Set[]) do |available_langtag, langtags|
+        raise ::ArgumentError, NIL_LANGTAG_ERROR if available_langtag.nil?
+
         langtags << available_langtag unless unacceptable?(available_langtag)
       end
     end
