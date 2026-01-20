@@ -4,7 +4,7 @@ module AcceptLanguage
   # = Accept-Language Header Parser
   #
   # Parser handles the parsing of +Accept-Language+ HTTP header field values
-  # as defined in RFC 2616 Section 14.4. It extracts language tags and their
+  # as defined in RFC 7231 Section 5.3.5. It extracts language ranges and their
   # associated quality values (q-values), validates them according to the
   # specification, and provides matching capabilities against application-
   # supported languages.
@@ -16,14 +16,14 @@ module AcceptLanguage
   # indicating relative preference. This parser:
   #
   # 1. Tokenizes the header into individual language-range entries
-  # 2. Extracts and validates language tags per BCP 47
-  # 3. Extracts and validates quality values per RFC 2616 Section 3.9
+  # 2. Extracts and validates language ranges per RFC 4647 Section 2.1
+  # 3. Extracts and validates quality values per RFC 7231 Section 5.3.1
   # 4. Stores valid entries for subsequent matching operations
   #
   # == Quality Values (q-values)
   #
-  # Quality values express the user's relative preference for a language.
-  # Per RFC 2616 Section 3.9, the syntax is:
+  # Quality values indicate the user's relative preference for a language.
+  # Per RFC 7231 Section 5.3.1, the syntax is:
   #
   #   qvalue = ( "0" [ "." 0*3DIGIT ] ) | ( "1" [ "." 0*3("0") ] )
   #
@@ -37,16 +37,25 @@ module AcceptLanguage
   #
   # Examples of invalid q-values (silently ignored): +1.5+, +0.1234+, +-0.5+, +.5+
   #
-  # == Language Tags
+  # == Language Ranges
   #
-  # Language tags follow the BCP 47 specification (RFC 5646), which supersedes
-  # the RFC 1766 reference in RFC 2616 Section 3.10. Valid tags consist of:
+  # Language ranges follow the Basic Language Range syntax defined in
+  # RFC 4647 Section 2.1:
   #
+  #   language-range = (1*8ALPHA *("-" 1*8alphanum)) / "*"
+  #   alphanum       = ALPHA / DIGIT
+  #
+  # Valid ranges consist of:
   # - A primary subtag of 1-8 alphabetic characters (e.g., +en+, +zh+, +ast+)
   # - Zero or more subtags of 1-8 alphanumeric characters, separated by hyphens
-  # - The special wildcard tag +*+ (matches any language)
+  # - The special wildcard +*+ (matches any language)
   #
-  # Examples of valid language tags:
+  # This syntax is compatible with BCP 47 language tags, supporting:
+  # - Year-based variant subtags (e.g., +1996+ in +de-CH-1996+)
+  # - Numeric region codes (e.g., +419+ for Latin America)
+  # - Script subtags (e.g., +Hant+ for Traditional Chinese script)
+  #
+  # Examples of valid language ranges:
   # - +en+ (English)
   # - +en-US+ (English, United States)
   # - +zh-Hant-TW+ (Chinese, Traditional script, Taiwan)
@@ -70,7 +79,7 @@ module AcceptLanguage
   # The parser is lenient by design to handle real-world headers that may
   # not strictly conform to specifications:
   #
-  # - Invalid language tags are silently skipped
+  # - Invalid language ranges are silently skipped
   # - Invalid quality values cause the entry to be skipped
   # - Empty or +nil+ input results in an empty languages_range
   # - Malformed entries (missing separators, etc.) are skipped
@@ -100,13 +109,14 @@ module AcceptLanguage
   #
   # @see AcceptLanguage.parse
   # @see Matcher
-  # @see https://tools.ietf.org/html/rfc2616#section-14.4 RFC 2616 Section 14.4
-  # @see https://tools.ietf.org/html/rfc2616#section-3.9 RFC 2616 Section 3.9 (qvalue)
-  # @see https://tools.ietf.org/html/bcp47 BCP 47
+  # @see https://www.rfc-editor.org/rfc/rfc7231#section-5.3.5 RFC 7231 Section 5.3.5 — Accept-Language
+  # @see https://www.rfc-editor.org/rfc/rfc7231#section-5.3.1 RFC 7231 Section 5.3.1 — Quality Values
+  # @see https://www.rfc-editor.org/rfc/rfc4647#section-2.1 RFC 4647 Section 2.1 — Basic Language Range
+  # @see https://www.rfc-editor.org/info/bcp47 BCP 47
   class Parser
     # Default quality value (1.0) scaled to internal integer representation.
     #
-    # When a language tag appears without an explicit quality value, it is
+    # When a language range appears without an explicit quality value, it is
     # assigned this default value, indicating maximum preference.
     #
     # @api private
@@ -142,14 +152,14 @@ module AcceptLanguage
     SEPARATOR = ","
 
     # The space character, stripped during parsing as whitespace around
-    # separators is optional per RFC 2616.
+    # separators is optional per RFC 7231.
     #
     # @api private
     # @return [String] " "
     SPACE = " "
 
     # The suffix that precedes quality values in language-range entries.
-    # A language entry with a quality value has the form: +langtag;q=qvalue+
+    # A language entry with a quality value has the form: +language-range;q=qvalue+
     #
     # @api private
     # @return [String] ";q="
@@ -157,7 +167,7 @@ module AcceptLanguage
 
     # Regular expression pattern for validating quality values.
     #
-    # Implements RFC 2616 Section 3.9 qvalue syntax:
+    # Implements RFC 7231 Section 5.3.1 qvalue syntax:
     #
     #   qvalue = ( "0" [ "." 0*3DIGIT ] ) | ( "1" [ "." 0*3("0") ] )
     #
@@ -185,10 +195,12 @@ module AcceptLanguage
     #   QVALUE_PATTERN.match?("1.001")  # => false (1.x must be zeros only)
     QVALUE_PATTERN = /\A(?:0(?:\.[0-9]{1,3})?|1(?:\.0{1,3})?)\z/
 
-    # Regular expression pattern for validating language tags.
+    # Regular expression pattern for validating language ranges.
     #
-    # Supports BCP 47 (RFC 5646) language tags, which supersede the RFC 1766
-    # tags referenced in RFC 2616 Section 3.10.
+    # Implements RFC 4647 Section 2.1 Basic Language Range syntax:
+    #
+    #   language-range = (1*8ALPHA *("-" 1*8alphanum)) / "*"
+    #   alphanum       = ALPHA / DIGIT
     #
     # == Pattern Structure
     #
@@ -197,30 +209,21 @@ module AcceptLanguage
     # - A primary subtag (1-8 ALPHA) followed by zero or more subtags
     #   (each 1-8 ALPHANUM, preceded by a hyphen)
     #
-    # == BCP 47 vs RFC 1766
-    #
-    # RFC 2616 Section 3.10 references RFC 1766, which only allowed alphabetic
-    # characters in subtags. However, BCP 47 (the current standard) permits
-    # alphanumeric subtags to support:
-    #
-    # - Year-based variant subtags (e.g., +1996+ in +de-CH-1996+)
-    # - Numeric region codes (e.g., +419+ for Latin America)
-    # - Script subtags with numbers (rare but valid)
-    #
-    # This implementation follows BCP 47 for maximum compatibility with
-    # modern language tags.
+    # This syntax is compatible with BCP 47 language tags, allowing
+    # alphanumeric subtags for variant subtags, numeric region codes,
+    # and other modern language tag features.
     #
     # @api private
     # @return [Regexp]
     #
-    # @example Valid language tags
+    # @example Valid language ranges
     #   LANGTAG_PATTERN.match?("en")         # => true
     #   LANGTAG_PATTERN.match?("en-US")      # => true
     #   LANGTAG_PATTERN.match?("zh-Hant-TW") # => true
     #   LANGTAG_PATTERN.match?("de-CH-1996") # => true
     #   LANGTAG_PATTERN.match?("*")          # => true
     #
-    # @example Invalid language tags
+    # @example Invalid language ranges
     #   LANGTAG_PATTERN.match?("")              # => false (empty)
     #   LANGTAG_PATTERN.match?("toolongprimary") # => false (> 8 chars)
     #   LANGTAG_PATTERN.match?("en_US")         # => false (underscore)
@@ -229,12 +232,12 @@ module AcceptLanguage
 
     # The parsed language preferences extracted from the Accept-Language header.
     #
-    # This hash maps downcased language tags to their quality values (scaled
-    # to integers 0-1000). Tags are stored in lowercase for case-insensitive
+    # This hash maps downcased language ranges to their quality values (scaled
+    # to integers 0-1000). Ranges are stored in lowercase for case-insensitive
     # matching.
     #
     # @api private
-    # @return [Hash{String => Integer}] language tags mapped to quality values
+    # @return [Hash{String => Integer}] language ranges mapped to quality values
     #
     # @example
     #   parser = Parser.new("en-GB;q=0.8, fr;q=0.9, de")
@@ -246,7 +249,7 @@ module AcceptLanguage
     # header field value.
     #
     # The parser extracts all valid language-range entries from the header,
-    # validates their language tags and quality values, and stores them for
+    # validates their language ranges and quality values, and stores them for
     # subsequent matching operations.
     #
     # == Parsing Process
@@ -254,17 +257,17 @@ module AcceptLanguage
     # 1. Validate that input is a String or nil
     # 2. Convert nil to empty string
     # 3. Normalize to lowercase for case-insensitive matching
-    # 4. Remove all spaces (whitespace is insignificant per RFC 2616)
+    # 4. Remove all spaces (whitespace is insignificant per RFC 7231)
     # 5. Split on commas to get individual entries
     # 6. For each entry:
-    #    a. Split on +;q=+ to separate tag from quality
-    #    b. Validate the language tag
+    #    a. Split on +;q=+ to separate range from quality
+    #    b. Validate the language range
     #    c. Validate and parse the quality value (default 1.0 if absent)
     #    d. Store valid entries in the languages_range hash
     #
     # @param field [String, nil] the Accept-Language header field value.
     #   Common sources include +request.env["HTTP_ACCEPT_LANGUAGE"]+ in Rack
-    #   applications or +request.headers["Accept-Language"]+ in Rails.
+    #   applications or +request.headers["HTTP_ACCEPT_LANGUAGE"]+ in Rails.
     #   When +nil+ is passed (header absent), it is treated as an empty string.
     #
     # @raise [TypeError] if +field+ is neither a String nor nil
@@ -296,7 +299,8 @@ module AcceptLanguage
     # Finds the best matching language from the available options based on
     # the user's preferences expressed in the Accept-Language header.
     #
-    # This method delegates to {Matcher} to perform the actual matching,
+    # This method delegates to {Matcher} to perform the actual matching
+    # using the Basic Filtering scheme defined in RFC 4647 Section 3.3.1,
     # which considers:
     #
     # 1. **Quality values**: Higher q-values indicate stronger preference
@@ -310,8 +314,8 @@ module AcceptLanguage
     # 1. Remove any available languages that are explicitly excluded (+q=0+)
     # 2. Iterate through preferred languages in descending quality order
     # 3. For each preferred language, find the first available language that:
-    #    - Exactly matches the preferred tag, OR
-    #    - Has the preferred tag as a prefix (followed by a hyphen)
+    #    - Exactly matches the preferred range, OR
+    #    - Has the preferred range as a prefix (followed by a hyphen)
     # 4. For wildcards, match any available language not already matched
     # 5. Return the first match found, or +nil+ if no match exists
     #
@@ -367,7 +371,7 @@ module AcceptLanguage
     #   I18n.locale = locale
     #
     # @see Matcher
-    # @see https://tools.ietf.org/html/rfc2616#section-14.4 RFC 2616 Section 14.4
+    # @see https://www.rfc-editor.org/rfc/rfc4647#section-3.3.1 RFC 4647 Section 3.3.1 — Basic Filtering
     def match(*available_langtags)
       Matcher.new(**languages_range).call(*available_langtags)
     end
@@ -375,15 +379,15 @@ module AcceptLanguage
     private
 
     # Parses the Accept-Language header field value into a hash of language
-    # tags and their quality values.
+    # ranges and their quality values.
     #
     # @param field [String, nil] the raw header field value
-    # @return [Hash{String => Integer}] downcased language tags mapped to
+    # @return [Hash{String => Integer}] downcased language ranges mapped to
     #   quality values (0-1000)
     def import(field)
       "#{field}".downcase.delete(SPACE).split(SEPARATOR).each_with_object({}) do |lang, hash|
         tag, quality = lang.split(SUFFIX)
-        next unless valid_tag?(tag)
+        next unless valid_range?(tag)
 
         quality_value = parse_quality(quality)
         next if quality_value.nil?
@@ -427,7 +431,7 @@ module AcceptLanguage
       quality.delete(DOT).ljust(4, DIGIT_ZERO).to_i
     end
 
-    # Validates a quality value string against RFC 2616 Section 3.9.
+    # Validates a quality value string against RFC 7231 Section 5.3.1.
     #
     # @param quality [String] the quality value to validate
     # @return [Boolean] true if the quality value is valid
@@ -435,14 +439,14 @@ module AcceptLanguage
       quality.match?(QVALUE_PATTERN)
     end
 
-    # Validates a language tag against BCP 47.
+    # Validates a language range against RFC 4647 Section 2.1.
     #
-    # @param tag [String, nil] the language tag to validate
-    # @return [Boolean] true if the tag is valid (including wildcard)
-    def valid_tag?(tag)
-      return false if tag.nil?
+    # @param range [String, nil] the language range to validate
+    # @return [Boolean] true if the range is valid (including wildcard)
+    def valid_range?(range)
+      return false if range.nil?
 
-      tag.match?(LANGTAG_PATTERN)
+      range.match?(LANGTAG_PATTERN)
     end
   end
 end

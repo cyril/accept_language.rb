@@ -2,6 +2,10 @@
 
 require_relative File.join("..", "spec_helper")
 
+# Tests for the Basic Filtering matching scheme defined in RFC 4647 Section 3.3.1.
+#
+# @see https://www.rfc-editor.org/rfc/rfc4647#section-3.3.1
+# @see https://www.rfc-editor.org/rfc/rfc7231#section-5.3.5
 RSpec.describe AcceptLanguage::Matcher do
   let(:matcher) do
     described_class.new(**AcceptLanguage::Parser.new(field).languages_range)
@@ -102,6 +106,9 @@ RSpec.describe AcceptLanguage::Matcher do
   end
 
   describe "Quality values" do
+    # RFC 7231 Section 5.3.1: Quality values indicate relative preference.
+    # Higher q-values indicate stronger preference; q=0 means "not acceptable".
+
     context "when I prefer Danish, but will accept British English and other types of English" do
       let(:field) { "da, en-gb;q=0.8, en;q=0.7" }
 
@@ -208,6 +215,9 @@ RSpec.describe AcceptLanguage::Matcher do
   end
 
   describe "Case-insensitive matching" do
+    # RFC 4647 Section 2: "Language tags and thus language ranges are to be
+    # treated as case-insensitive."
+
     let(:available_langtags) { [available_langtag] }
 
     context "when the field is in uppercase" do
@@ -272,10 +282,10 @@ RSpec.describe AcceptLanguage::Matcher do
   end
 
   describe "Identical quality values" do
-    # When multiple languages have the same qvalue, the order of declaration
+    # When multiple languages have the same q-value, the order of declaration
     # in the Accept-Language header should be preserved (first declared wins).
 
-    context "when two languages have the same qvalue" do
+    context "when two languages have the same q-value" do
       let(:available_langtags) { %i[en fr] }
 
       context "when English is declared first" do
@@ -295,7 +305,7 @@ RSpec.describe AcceptLanguage::Matcher do
       end
     end
 
-    context "when three languages have the same qvalue" do
+    context "when three languages have the same q-value" do
       let(:field) { "de;q=0.8, en;q=0.8, fr;q=0.8" }
       let(:available_langtags) { %i[fr en de] }
 
@@ -326,7 +336,7 @@ RSpec.describe AcceptLanguage::Matcher do
       context "when all languages are available" do
         let(:available_langtags) { %i[de fr en da] }
 
-        it "prefers Danish (highest qvalue)" do
+        it "prefers Danish (highest q-value)" do
           expect(best_match).to be :da
         end
       end
@@ -334,7 +344,7 @@ RSpec.describe AcceptLanguage::Matcher do
       context "when Danish is not available" do
         let(:available_langtags) { %i[de fr en] }
 
-        it "prefers English (same qvalue as French, but declared first)" do
+        it "prefers English (same q-value as French, but declared first)" do
           expect(best_match).to be :en
         end
       end
@@ -342,13 +352,13 @@ RSpec.describe AcceptLanguage::Matcher do
       context "when only German is available" do
         let(:available_langtags) { %i[de] }
 
-        it "returns German (lowest qvalue but only option)" do
+        it "returns German (lowest q-value but only option)" do
           expect(best_match).to be :de
         end
       end
     end
 
-    context "when all languages have implicit qvalue of 1" do
+    context "when all languages have implicit q-value of 1" do
       let(:field) { "en, fr, de" }
       let(:available_langtags) { %i[de fr en] }
 
@@ -358,14 +368,14 @@ RSpec.describe AcceptLanguage::Matcher do
     end
   end
 
-  describe "RFC 2616 Section 14.4 prefix matching" do
+  describe "RFC 4647 Section 3.3.1 Basic Filtering prefix matching" do
+    # RFC 4647 Section 3.3.1: "A language-range matches a language-tag if it
+    # exactly equals the tag, or if it exactly equals a prefix of the tag such
+    # that the first character following the prefix is '-'."
+
     let(:available_langtags) { [available_langtag] }
 
-    # RFC 2616: "A language-range matches a language-tag if it exactly equals
-    # the tag, or if it exactly equals a prefix of the tag such that the first
-    # tag character following the prefix is '-'."
-
-    context "when language-range is 'zh'" do
+    context "when language range is 'zh'" do
       let(:field) { "zh" }
 
       context "when available tag is 'zh' (exact match)" do
@@ -409,7 +419,7 @@ RSpec.describe AcceptLanguage::Matcher do
       end
     end
 
-    context "when language-range is 'en'" do
+    context "when language range is 'en'" do
       let(:field) { "en" }
 
       context "when available tag is 'english' (invalid: not a subtag)" do
@@ -437,7 +447,7 @@ RSpec.describe AcceptLanguage::Matcher do
       end
     end
 
-    context "when language-range is 'en-US'" do
+    context "when language range is 'en-US'" do
       let(:field) { "en-US" }
 
       context "when available tag is 'en'" do
@@ -460,6 +470,35 @@ RSpec.describe AcceptLanguage::Matcher do
         let(:available_langtag) { :"en-GB" }
 
         it "does NOT match (different region)" do
+          expect(best_match).to be_nil
+        end
+      end
+    end
+
+    context "when language range is 'de-de'" do
+      # Example from RFC 4647 Section 3.3.1
+      let(:field) { "de-de" }
+
+      context "when available tag is 'de-DE-1996'" do
+        let(:available_langtag) { :"de-DE-1996" }
+
+        it "matches via prefix" do
+          expect(best_match).to be :"de-DE-1996"
+        end
+      end
+
+      context "when available tag is 'de-Deva'" do
+        let(:available_langtag) { :"de-Deva" }
+
+        it "does NOT match (de-de is not a prefix of de-Deva)" do
+          expect(best_match).to be_nil
+        end
+      end
+
+      context "when available tag is 'de-Latn-DE'" do
+        let(:available_langtag) { :"de-Latn-DE" }
+
+        it "does NOT match (de-de is not a prefix of de-Latn-DE)" do
           expect(best_match).to be_nil
         end
       end
@@ -507,9 +546,45 @@ RSpec.describe AcceptLanguage::Matcher do
     end
   end
 
+  describe "Wildcard behavior" do
+    # RFC 4647 Section 3.3.1: "The special range '*' in a language priority list
+    # matches any tag. A protocol that uses language ranges MAY specify additional
+    # rules about the semantics of '*'; for instance, HTTP/1.1 specifies that the
+    # range '*' matches only languages not matched by any other range within an
+    # 'Accept-Language' header."
+
+    context "when wildcard is the only range" do
+      let(:field) { "*" }
+      let(:available_langtags) { %i[en fr de] }
+
+      it "matches the first available language" do
+        expect(best_match).to be :en
+      end
+    end
+
+    context "when wildcard has lower priority than explicit ranges" do
+      let(:field) { "fr, *;q=0.5" }
+
+      context "when French is available" do
+        let(:available_langtags) { %i[fr en] }
+
+        it "prefers French (explicit match)" do
+          expect(best_match).to be :fr
+        end
+      end
+
+      context "when only non-French languages are available" do
+        let(:available_langtags) { %i[en de] }
+
+        it "matches via wildcard" do
+          expect(best_match).to be :en
+        end
+      end
+    end
+  end
+
   describe "Wildcard exclusion (q=0)" do
-    # RFC 2616 Section 3.9: "If a parameter has a quality value of 0, then
-    # content with this parameter is 'not acceptable' for the client."
+    # RFC 7231 Section 5.3.1: A q-value of 0 means "not acceptable".
     #
     # When combined with the wildcard, "*;q=0" means "all languages not
     # explicitly listed are not acceptable".

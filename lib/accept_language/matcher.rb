@@ -3,9 +3,9 @@
 module AcceptLanguage
   # = Language Preference Matcher
   #
-  # Matcher implements the language matching algorithm defined in RFC 2616
-  # Section 14.4. It takes parsed language preferences (from {Parser}) and
-  # determines the optimal language choice from a set of available languages.
+  # Matcher implements the Basic Filtering matching scheme defined in
+  # RFC 4647 Section 3.3.1. It takes parsed language preferences (from {Parser})
+  # and determines the optimal language choice from a set of available languages.
   #
   # == Overview
   #
@@ -17,9 +17,9 @@ module AcceptLanguage
   # 4. **Wildcards**: The +*+ range matches any otherwise unmatched language
   # 5. **Exclusions**: Languages with +q=0+ are explicitly unacceptable
   #
-  # == RFC 2616 Section 14.4 Compliance
+  # == RFC 4647 Section 3.3.1 Compliance
   #
-  # This implementation follows the Accept-Language matching rules:
+  # This implementation follows the Basic Filtering matching rules:
   #
   # > A language-range matches a language-tag if it exactly equals the tag,
   # > or if it exactly equals a prefix of the tag such that the first tag
@@ -32,7 +32,7 @@ module AcceptLanguage
   #
   # == Quality Value Semantics
   #
-  # Quality values have specific meanings per RFC 2616:
+  # Quality values have specific meanings per RFC 7231 Section 5.3.1:
   #
   # - +q=1+ (or omitted): Most preferred
   # - +0 < q < 1+: Acceptable with relative preference
@@ -47,10 +47,11 @@ module AcceptLanguage
   # == Wildcard Behavior
   #
   # The wildcard +*+ matches any language not explicitly matched by another
-  # language-range. When processing a wildcard:
+  # language range. This behavior is specific to HTTP, as noted in
+  # RFC 4647 Section 3.3.1. When processing a wildcard:
   #
-  # 1. Collect all explicitly listed language tags (excluding the wildcard)
-  # 2. Find available languages that don't match any explicit tag
+  # 1. Collect all explicitly listed language ranges (excluding the wildcard)
+  # 2. Find available languages that don't match any explicit range
   # 3. Return the first such language
   #
   # This ensures explicit preferences always take priority over the wildcard.
@@ -83,12 +84,12 @@ module AcceptLanguage
   #   AcceptLanguage.parse("en, fr;q=0.8").match(:en, :fr)
   #
   # @see Parser#match
-  # @see https://tools.ietf.org/html/rfc2616#section-14.4 RFC 2616 Section 14.4
+  # @see https://www.rfc-editor.org/rfc/rfc4647#section-3.3.1 RFC 4647 Section 3.3.1 — Basic Filtering
   class Matcher
-    # The hyphen character used as a subtag delimiter in BCP 47 language tags.
+    # The hyphen character used as a subtag delimiter in language tags.
     #
-    # Per RFC 2616 Section 14.4, prefix matching must respect hyphen boundaries.
-    # A language-range matches a language-tag only if the character immediately
+    # Per RFC 4647 Section 3.3.1, prefix matching must respect hyphen boundaries.
+    # A language range matches a language tag only if the character immediately
     # following the prefix is a hyphen.
     #
     # @api private
@@ -106,18 +107,18 @@ module AcceptLanguage
 
     # The wildcard character that matches any language not explicitly listed.
     #
-    # Per RFC 2616 Section 14.4, the wildcard has special semantics:
+    # Per RFC 4647 Section 3.3.1, the wildcard has special semantics in HTTP:
     # - It matches any language not matched by other ranges
     # - +*;q=0+ makes all unlisted languages unacceptable
-    # - It has lower effective priority than explicit language tags
+    # - It has lower effective priority than explicit language ranges
     #
     # @api private
     # @return [String] "*"
     WILDCARD = "*"
 
-    # Language tags explicitly marked as unacceptable (+q=0+).
+    # Language ranges explicitly marked as unacceptable (+q=0+).
     #
-    # These tags are filtered out from available languages before any
+    # These ranges are filtered out from available languages before any
     # matching occurs. Exclusions apply via prefix matching, so excluding
     # +en+ also excludes +en-US+, +en-GB+, etc.
     #
@@ -127,7 +128,7 @@ module AcceptLanguage
     #   empty, resulting in no matches.
     #
     # @api private
-    # @return [Set<String>] downcased language tags with q=0
+    # @return [Set<String>] downcased language ranges with q=0
     #
     # @example
     #   # For "*, en;q=0, de;q=0"
@@ -135,9 +136,9 @@ module AcceptLanguage
     #   # => #<Set: {"en", "de"}>
     attr_reader :excluded_langtags
 
-    # Language tags sorted by preference (descending quality value).
+    # Language ranges sorted by preference (descending quality value).
     #
-    # This array contains only tags with +q > 0+, ordered from most preferred
+    # This array contains only ranges with +q > 0+, ordered from most preferred
     # to least preferred. When quality values are equal, the original
     # declaration order from the Accept-Language header is preserved.
     #
@@ -145,7 +146,7 @@ module AcceptLanguage
     # same header and available languages, the result is always the same.
     #
     # @api private
-    # @return [Array<String>] downcased language tags, highest quality first
+    # @return [Array<String>] downcased language ranges, highest quality first
     #
     # @example
     #   # For "fr;q=0.8, en, de;q=0.9"
@@ -158,13 +159,13 @@ module AcceptLanguage
     #
     # The initialization process:
     #
-    # 1. Separates excluded tags (+q=0+) from preferred tags (+q > 0+)
-    # 2. Sorts preferred tags by descending quality value
-    # 3. Preserves original order for tags with equal quality (stable sort)
+    # 1. Separates excluded ranges (+q=0+) from preferred ranges (+q > 0+)
+    # 2. Sorts preferred ranges by descending quality value
+    # 3. Preserves original order for ranges with equal quality (stable sort)
     #
     # == Exclusion Rules
     #
-    # Only specific language tags with +q=0+ are added to the exclusion set.
+    # Only specific language ranges with +q=0+ are added to the exclusion set.
     # The wildcard +*+ is explicitly NOT added even when +*;q=0+ is present,
     # because:
     #
@@ -180,7 +181,7 @@ module AcceptLanguage
     # Accept-Language header wins.
     #
     # @api private
-    # @param languages_range [Hash{String => Integer}] language tags mapped to
+    # @param languages_range [Hash{String => Integer}] language ranges mapped to
     #   quality values (0-1000), as produced by {Parser}
     #
     # @example
@@ -193,7 +194,7 @@ module AcceptLanguage
       languages_range.each do |langtag, quality|
         next unless quality.zero? && !wildcard?(langtag)
 
-        # Exclude specific language tags, but NOT the wildcard.
+        # Exclude specific language ranges, but NOT the wildcard.
         # When "*;q=0" is specified, all non-listed languages become
         # unacceptable implicitly (they won't match any preferred_langtags).
         # Adding "*" to excluded_langtags would break prefix_match? logic.
@@ -213,10 +214,10 @@ module AcceptLanguage
     #
     # == Algorithm
     #
-    # 1. **Filter**: Remove available languages that match any excluded tag
-    # 2. **Match**: For each preferred tag (in quality order):
+    # 1. **Filter**: Remove available languages that match any excluded range
+    # 2. **Match**: For each preferred range (in quality order):
     #    - If it's a wildcard, return the first available language not
-    #      matching any other preferred tag
+    #      matching any other preferred range
     #    - Otherwise, return the first available language that matches
     #      via exact match or prefix match
     # 3. **Result**: Return the first match found, or +nil+ if none
@@ -255,7 +256,7 @@ module AcceptLanguage
 
     private
 
-    # Iterates through preferred languages to find the first match.
+    # Iterates through preferred language ranges to find the first match.
     #
     # @param available_langtags [Set<String>] pre-filtered available tags
     # @return [Symbol, nil] the matched tag or nil
@@ -268,11 +269,11 @@ module AcceptLanguage
       nil
     end
 
-    # Attempts to match a single preferred tag against available languages.
+    # Attempts to match a single preferred range against available languages.
     #
-    # Handles both wildcard and specific language tags differently.
+    # Handles both wildcard and specific language ranges differently.
     #
-    # @param preferred_tag [String] the preferred language tag to match
+    # @param preferred_tag [String] the preferred language range to match
     # @param available_langtags [Set<String>] available tags to search
     # @return [String, nil] the matched tag or nil
     def match_langtag(preferred_tag, available_langtags)
@@ -285,7 +286,7 @@ module AcceptLanguage
 
     # Finds an available language that matches via exact or prefix match.
     #
-    # @param preferred_tag [String] the preferred tag (downcased)
+    # @param preferred_tag [String] the preferred range (downcased)
     # @param available_langtags [Set<String>] available tags
     # @return [String, nil] the first matching tag or nil
     def find_matching_tag(preferred_tag, available_langtags)
@@ -295,8 +296,9 @@ module AcceptLanguage
     # Finds an available language for wildcard matching.
     #
     # Returns the first available language that doesn't match any explicitly
-    # listed preferred language tag. This implements the RFC 2616 semantics
-    # where +*+ matches "any language not matched by another range".
+    # listed preferred language range. This implements the HTTP-specific
+    # wildcard semantics defined in RFC 4647 Section 3.3.1, where +*+ matches
+    # "any language not matched by another range".
     #
     # @param available_langtags [Array<String>] available tags
     # @return [String, nil] the first non-matching tag or nil
@@ -341,7 +343,7 @@ module AcceptLanguage
       value.eql?(WILDCARD)
     end
 
-    # Implements RFC 2616 Section 14.4 prefix matching rule.
+    # Implements RFC 4647 Section 3.3.1 Basic Filtering prefix matching rule.
     #
     # From the specification:
     #
@@ -354,14 +356,14 @@ module AcceptLanguage
     # - +en+ matches +en+ (exact)
     # - +en+ matches +en-US+ (prefix + hyphen)
     # - +en+ does NOT match +eng+ (no hyphen after prefix)
-    # - +en-US+ does NOT match +en+ (prefix is longer than tag)
+    # - +en-US+ does NOT match +en+ (range is longer than tag)
     #
-    # Matching is case-insensitive per RFC 2616, using +casecmp?+ for
-    # efficient comparison without allocating new strings.
+    # Matching is case-insensitive per RFC 4647 Section 2, using +casecmp?+
+    # for efficient comparison without allocating new strings.
     #
-    # @param prefix [String] the language-range to match (downcased)
-    # @param tag [String] the language-tag to test (any case)
-    # @return [Boolean] true if prefix matches tag per RFC 2616 rules
+    # @param range [String] the language range to match (downcased)
+    # @param tag [String] the language tag to test (any case)
+    # @return [Boolean] true if range matches tag per RFC 4647 rules
     #
     # @example Exact matches
     #   prefix_match?("en", "en")       # => true
@@ -374,14 +376,14 @@ module AcceptLanguage
     #   prefix_match?("zh", "zh-Hant-TW") # => true
     #
     # @example Non-matches
-    #   prefix_match?("en-us", "en")    # => false (prefix longer than tag)
+    #   prefix_match?("en-us", "en")    # => false (range longer than tag)
     #   prefix_match?("en", "eng")      # => false (no hyphen boundary)
     #   prefix_match?("en", "fr")       # => false (different language)
-    def prefix_match?(prefix, tag)
-      return true if tag.casecmp?(prefix)
-      return false if tag.length <= prefix.length
+    def prefix_match?(range, tag)
+      return true if tag.casecmp?(range)
+      return false if tag.length <= range.length
 
-      tag[0, prefix.length].casecmp?(prefix) && tag[prefix.length] == HYPHEN
+      tag[0, range.length].casecmp?(range) && tag[range.length] == HYPHEN
     end
   end
 end

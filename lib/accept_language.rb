@@ -3,30 +3,35 @@
 # = Accept-Language Header Parser
 #
 # AcceptLanguage is a lightweight, thread-safe Ruby library for parsing the
-# +Accept-Language+ HTTP header field as defined in RFC 2616 Section 14.4,
-# with full support for BCP 47 (RFC 5646) language tags.
+# +Accept-Language+ HTTP header field as defined in RFC 7231 Section 5.3.5,
+# with full support for BCP 47 language tags.
 #
 # == Purpose
 #
-# The +Accept-Language+ request-header field is sent by user agents to indicate
-# the set of natural languages that are preferred as a response to the request.
-# This library parses that header and matches the user's language preferences
-# against your application's available languages, respecting quality values,
-# wildcards, exclusions, and prefix matching rules defined by the HTTP/1.1
-# specification.
+# The +Accept-Language+ request header field is sent by user agents to indicate
+# the set of natural languages that are preferred in the response. This library
+# parses that header and matches the user's language preferences against your
+# application's available languages, respecting quality values, wildcards,
+# exclusions, and the Basic Filtering matching scheme defined in RFC 4647.
 #
 # == Standards Compliance
 #
 # This implementation conforms to:
 #
-# - {RFC 2616 Section 14.4}[https://tools.ietf.org/html/rfc2616#section-14.4] -
+# - {RFC 7231 Section 5.3.5}[https://www.rfc-editor.org/rfc/rfc7231#section-5.3.5] -
 #   Accept-Language header field definition
-# - {RFC 2616 Section 3.9}[https://tools.ietf.org/html/rfc2616#section-3.9] -
+# - {RFC 7231 Section 5.3.1}[https://www.rfc-editor.org/rfc/rfc7231#section-5.3.1] -
 #   Quality values (qvalues) syntax
-# - {RFC 2616 Section 3.10}[https://tools.ietf.org/html/rfc2616#section-3.10] -
-#   Language tags reference
-# - {BCP 47 / RFC 5646}[https://tools.ietf.org/html/bcp47] -
-#   Tags for Identifying Languages (modern standard for language tags)
+# - {RFC 4647 Section 2.1}[https://www.rfc-editor.org/rfc/rfc4647#section-2.1] -
+#   Basic Language Range syntax
+# - {RFC 4647 Section 3.3.1}[https://www.rfc-editor.org/rfc/rfc4647#section-3.3.1] -
+#   Basic Filtering matching scheme
+# - {BCP 47}[https://www.rfc-editor.org/info/bcp47] -
+#   Tags for Identifying Languages
+#
+# Note: RFC 7231 obsoletes RFC 2616 (the original HTTP/1.1 specification).
+# The +Accept-Language+ header behavior remains unchanged, ensuring full
+# backward compatibility.
 #
 # == Basic Usage
 #
@@ -46,23 +51,25 @@
 #
 # == Quality Values
 #
-# Quality values (q-values) express relative preference, ranging from +0+
-# (explicitly unacceptable) to +1+ (most preferred). When omitted, the
-# default quality value is +1+.
+# Quality values (q-values) indicate relative preference, ranging from +0+
+# (not acceptable) to +1+ (most preferred). When omitted, the default
+# quality value is +1+.
 #
-# Per RFC 2616 Section 3.9, valid q-values have at most three decimal places.
-# Invalid q-values cause the associated language tag to be ignored.
+# Per RFC 7231 Section 5.3.1, valid q-values have at most three decimal places.
+# Invalid q-values cause the associated language range to be ignored.
 #
 #   parser = AcceptLanguage.parse("da, en-GB;q=0.8, en;q=0.7")
 #
 #   parser.match(:en, :da)      # => :da       (q=1 beats q=0.8)
 #   parser.match(:en, :"en-GB") # => :"en-GB"  (q=0.8 beats q=0.7)
 #
-# == Prefix Matching
+# == Basic Filtering
 #
-# Per RFC 2616 Section 14.4, a language-range matches a language-tag if it
-# exactly equals the tag, or if it exactly equals a prefix of the tag such
-# that the first character following the prefix is a hyphen (+"-"+).
+# This library implements the Basic Filtering matching scheme defined in
+# RFC 4647 Section 3.3.1. A language range matches a language tag if, in a
+# case-insensitive comparison, it exactly equals the tag, or if it exactly
+# equals a prefix of the tag such that the first character following the
+# prefix is a hyphen (+"-"+).
 #
 #   # "zh" matches "zh-TW" (prefix match)
 #   AcceptLanguage.parse("zh").match(:"zh-TW")
@@ -79,7 +86,8 @@
 # == Wildcards
 #
 # The wildcard character +*+ matches any language not explicitly matched by
-# another language-range in the header:
+# another language range in the header. This behavior is specific to HTTP,
+# as noted in RFC 4647 Section 3.3.1.
 #
 #   # Wildcard matches any language
 #   AcceptLanguage.parse("de, *;q=0.5").match(:ja)
@@ -91,7 +99,7 @@
 #
 # == Exclusions
 #
-# A quality value of +0+ explicitly marks a language as unacceptable:
+# A quality value of +0+ explicitly marks a language as not acceptable:
 #
 #   # English is excluded despite wildcard
 #   AcceptLanguage.parse("*, en;q=0").match(:en)
@@ -100,7 +108,7 @@
 #   AcceptLanguage.parse("*, en;q=0").match(:ja)
 #   # => :ja
 #
-#   # Exclusions apply to prefix matches
+#   # Exclusions apply via prefix matching
 #   AcceptLanguage.parse("*, en;q=0").match(:"en-GB")
 #   # => nil  (en-GB is excluded via the "en" prefix)
 #
@@ -117,9 +125,9 @@
 #
 # == Case Insensitivity
 #
-# Language tag matching is case-insensitive per RFC 2616, but the original
-# case of available language tags provided to +match+ is preserved in the
-# return value:
+# Language tag matching is case-insensitive per RFC 4647 Section 2, but the
+# original case of available language tags provided to +match+ is preserved
+# in the return value:
 #
 #   AcceptLanguage.parse("EN-GB").match(:"en-gb")
 #   # => :"en-gb"
@@ -132,7 +140,7 @@
 # Full support for BCP 47 language tags including script subtags, region
 # subtags, and variant subtags:
 #
-#   # Script subtags (e.g., Hans for Simplified Chinese)
+#   # Script subtags (e.g., Hant for Traditional Chinese)
 #   AcceptLanguage.parse("zh-Hant").match(:"zh-Hant-TW", :"zh-Hans-CN")
 #   # => :"zh-Hant-TW"
 #
@@ -147,7 +155,6 @@
 #
 # == Rack Integration Example
 #
-#   # config.ru
 #   class LocaleMiddleware
 #     def initialize(app, available_locales:, default_locale:)
 #       @app = app
@@ -165,40 +172,35 @@
 #
 #     def detect_locale(env)
 #       header = env["HTTP_ACCEPT_LANGUAGE"]
+#       return unless header
+#
 #       AcceptLanguage.parse(header).match(*@available_locales)
 #     end
 #   end
 #
 # == Rails Integration Example
 #
-#   # app/controllers/application_controller.rb
 #   class ApplicationController < ActionController::Base
-#     before_action :best_locale_from_request!
+#     before_action :set_locale
 #
-#     def best_locale_from_request!
-#       I18n.locale = best_locale_from_request
+#     private
+#
+#     def set_locale
+#       I18n.locale = preferred_locale || I18n.default_locale
 #     end
 #
-#     def best_locale_from_request
-#       # HTTP_ACCEPT_LANGUAGE is the standardized key for the Accept-Language header in Rack/Rails
-#       return I18n.default_locale unless request.headers.key?("HTTP_ACCEPT_LANGUAGE")
+#     def preferred_locale
+#       header = request.headers["HTTP_ACCEPT_LANGUAGE"]
+#       return unless header
 #
-#       string = request.headers.fetch("HTTP_ACCEPT_LANGUAGE")
-#       locale = AcceptLanguage.parse(string).match(*I18n.available_locales)
-#
-#       # If the server cannot serve any matching language,
-#       # it can theoretically send back a 406 (Not Acceptable) error code.
-#       # But, for a better user experience, this is rarely done and more
-#       # common way is to ignore the Accept-Language header in this case.
-#       return I18n.default_locale if locale.nil?
-#
-#       locale
+#       AcceptLanguage.parse(header).match(*I18n.available_locales)
 #     end
 #   end
 #
 # @see Parser
-# @see https://tools.ietf.org/html/rfc2616#section-14.4 RFC 2616 Section 14.4
-# @see https://tools.ietf.org/html/bcp47 BCP 47
+# @see https://www.rfc-editor.org/rfc/rfc7231#section-5.3.5 RFC 7231 Section 5.3.5 — Accept-Language
+# @see https://www.rfc-editor.org/rfc/rfc4647#section-3.3.1 RFC 4647 Section 3.3.1 — Basic Filtering
+# @see https://www.rfc-editor.org/info/bcp47 BCP 47 — Tags for Identifying Languages
 # @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Accept-Language MDN Accept-Language
 #
 # @author Cyril Kato
@@ -209,11 +211,11 @@ module AcceptLanguage
   #
   # The parser handles all aspects of the Accept-Language specification:
   # - Quality values (+q=0+ to +q=1+, default +1+ when omitted)
-  # - Language tag validation per BCP 47
+  # - Language range validation per RFC 4647 Section 2.1
   # - Wildcards (+*+)
   # - Case normalization (matching is case-insensitive)
   #
-  # Invalid language tags or malformed quality values in the input are
+  # Invalid language ranges or malformed quality values in the input are
   # silently ignored, allowing the parser to handle real-world headers
   # that may not strictly conform to specifications.
   #
@@ -256,12 +258,13 @@ module AcceptLanguage
   #   AcceptLanguage.parse("en;q=2.0, fr;q=0.8").match(:en, :fr)
   #   # => :fr  (en is ignored due to invalid q-value > 1)
   #
-  #   # Invalid language tags are ignored
+  #   # Invalid language ranges are ignored
   #   AcceptLanguage.parse("123invalid, fr;q=0.8").match(:fr)
   #   # => :fr
   #
   # @see Parser#match
-  # @see https://tools.ietf.org/html/rfc2616#section-14.4 RFC 2616 Section 14.4
+  # @see https://www.rfc-editor.org/rfc/rfc7231#section-5.3.5 RFC 7231 Section 5.3.5
+  # @see https://www.rfc-editor.org/rfc/rfc4647#section-3.3.1 RFC 4647 Section 3.3.1
   def self.parse(field)
     Parser.new(field)
   end
