@@ -19,7 +19,7 @@ module AcceptLanguage
       @excluded_langtags = ::Set[]
       langtags = []
 
-      languages_range.select do |langtag, quality|
+      languages_range.each do |langtag, quality|
         if quality.zero?
           # Exclude specific language tags, but NOT the wildcard.
           # When "*;q=0" is specified, all non-listed languages become
