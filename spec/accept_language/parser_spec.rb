@@ -1,6 +1,8 @@
+#!/usr/bin/env ruby
 # frozen_string_literal: true
 
 require_relative File.join("..", "spec_helper")
+require_relative File.join("..", "..", "lib", "accept_language", "parser")
 
 # Tests for the Accept-Language header parser.
 #

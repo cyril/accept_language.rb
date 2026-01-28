@@ -1,20 +1,22 @@
+#!/usr/bin/env ruby
 # frozen_string_literal: true
 
 require_relative File.join("..", "spec_helper")
+require_relative File.join("..", "..", "lib", "accept_language", "matcher")
 
 # Tests for the Basic Filtering matching scheme defined in RFC 4647 Section 3.3.1.
+#
+# Note: The Matcher class expects a hash where:
+# - Keys are downcased language range strings
+# - Values are integers 0-1000 (quality values multiplied by 1000)
 #
 # @see https://www.rfc-editor.org/rfc/rfc4647#section-3.3.1
 # @see https://www.rfc-editor.org/rfc/rfc7231#section-5.3.5
 RSpec.describe AcceptLanguage::Matcher do
-  let(:matcher) do
-    described_class.new(**AcceptLanguage::Parser.new(field).languages_range)
-  end
-
   let(:best_match) { matcher.call(*available_langtags) }
 
   describe "Type validation" do
-    let(:field) { "en" }
+    let(:matcher) { described_class.new("en" => 1000) }
 
     context "when passing a String instead of Symbol" do
       it "raises TypeError" do
@@ -49,7 +51,7 @@ RSpec.describe AcceptLanguage::Matcher do
 
   context "when asking for Chinese (Taiwan)" do
     let(:available_langtags) { [available_langtag] }
-    let(:field) { "zh-TW" }
+    let(:matcher) { described_class.new("zh-tw" => 1000) }
 
     context "when Chinese is available" do
       let(:available_langtag) { :zh }
@@ -78,7 +80,7 @@ RSpec.describe AcceptLanguage::Matcher do
 
   context "when asking for Chinese" do
     let(:available_langtags) { [available_langtag] }
-    let(:field) { "zh" }
+    let(:matcher) { described_class.new("zh" => 1000) }
 
     context "when Chinese is available" do
       let(:available_langtag) { :zh }
@@ -110,7 +112,8 @@ RSpec.describe AcceptLanguage::Matcher do
     # Higher q-values indicate stronger preference; q=0 means "not acceptable".
 
     context "when I prefer Danish, but will accept British English and other types of English" do
-      let(:field) { "da, en-gb;q=0.8, en;q=0.7" }
+      # "da, en-gb;q=0.8, en;q=0.7"
+      let(:matcher) { described_class.new("da" => 1000, "en-gb" => 800, "en" => 700) }
 
       context "when Danish, British English and English are available" do
         let(:available_langtags) { %i[da en-GB en] }
@@ -162,7 +165,8 @@ RSpec.describe AcceptLanguage::Matcher do
     end
 
     context "when I accept German (Luxembourg), or any language except English" do
-      let(:field) { "de-LU, *;q=0.5, en;q=0" }
+      # "de-LU, *;q=0.5, en;q=0"
+      let(:matcher) { described_class.new("de-lu" => 1000, "*" => 500, "en" => 0) }
 
       context "when German (Luxembourg), English and Russian are available" do
         let(:available_langtags) { %i[de-LU en ru] }
@@ -220,8 +224,9 @@ RSpec.describe AcceptLanguage::Matcher do
 
     let(:available_langtags) { [available_langtag] }
 
-    context "when the field is in uppercase" do
-      let(:field) { "EN-NZ" }
+    context "when the language range is stored in lowercase (as expected)" do
+      # Matcher always receives lowercase keys from Parser
+      let(:matcher) { described_class.new("en-nz" => 1000) }
 
       context "when the corresponding language is in uppercase" do
         let(:available_langtag) { :"EN-NZ" }
@@ -246,30 +251,6 @@ RSpec.describe AcceptLanguage::Matcher do
           expect(best_match).to be :"En-Nz"
         end
       end
-    end
-
-    context "when the field is in lowercase" do
-      let(:field) { "en-nz" }
-
-      context "when the corresponding language is in uppercase" do
-        let(:available_langtag) { :"EN-NZ" }
-
-        it "preserves case" do
-          expect(best_match).to be :"EN-NZ"
-        end
-      end
-
-      context "when the corresponding language is in lowercase" do
-        let(:available_langtag) { :"en-nz" }
-
-        it "preserves case" do
-          expect(best_match).to be :"en-nz"
-        end
-      end
-    end
-
-    context "when the field is in mixed case" do
-      let(:field) { "eN-nZ" }
 
       context "when the corresponding language is in standard case" do
         let(:available_langtag) { :"en-NZ" }
@@ -284,12 +265,13 @@ RSpec.describe AcceptLanguage::Matcher do
   describe "Identical quality values" do
     # When multiple languages have the same q-value, the order of declaration
     # in the Accept-Language header should be preserved (first declared wins).
+    # Ruby's Hash preserves insertion order since Ruby 1.9.
 
     context "when two languages have the same q-value" do
       let(:available_langtags) { %i[en fr] }
 
       context "when English is declared first" do
-        let(:field) { "en;q=0.8, fr;q=0.8" }
+        let(:matcher) { described_class.new("en" => 800, "fr" => 800) }
 
         it "prefers English (declared first)" do
           expect(best_match).to be :en
@@ -297,7 +279,7 @@ RSpec.describe AcceptLanguage::Matcher do
       end
 
       context "when French is declared first" do
-        let(:field) { "fr;q=0.8, en;q=0.8" }
+        let(:matcher) { described_class.new("fr" => 800, "en" => 800) }
 
         it "prefers French (declared first)" do
           expect(best_match).to be :fr
@@ -306,7 +288,8 @@ RSpec.describe AcceptLanguage::Matcher do
     end
 
     context "when three languages have the same q-value" do
-      let(:field) { "de;q=0.8, en;q=0.8, fr;q=0.8" }
+      # "de;q=0.8, en;q=0.8, fr;q=0.8"
+      let(:matcher) { described_class.new("de" => 800, "en" => 800, "fr" => 800) }
       let(:available_langtags) { %i[fr en de] }
 
       it "prefers German (declared first)" do
@@ -331,7 +314,8 @@ RSpec.describe AcceptLanguage::Matcher do
     end
 
     context "when mixed with different quality values" do
-      let(:field) { "da, en;q=0.8, fr;q=0.8, de;q=0.7" }
+      # "da, en;q=0.8, fr;q=0.8, de;q=0.7"
+      let(:matcher) { described_class.new("da" => 1000, "en" => 800, "fr" => 800, "de" => 700) }
 
       context "when all languages are available" do
         let(:available_langtags) { %i[de fr en da] }
@@ -359,7 +343,8 @@ RSpec.describe AcceptLanguage::Matcher do
     end
 
     context "when all languages have implicit q-value of 1" do
-      let(:field) { "en, fr, de" }
+      # "en, fr, de" (all with q=1.0)
+      let(:matcher) { described_class.new("en" => 1000, "fr" => 1000, "de" => 1000) }
       let(:available_langtags) { %i[de fr en] }
 
       it "prefers English (declared first)" do
@@ -376,7 +361,7 @@ RSpec.describe AcceptLanguage::Matcher do
     let(:available_langtags) { [available_langtag] }
 
     context "when language range is 'zh'" do
-      let(:field) { "zh" }
+      let(:matcher) { described_class.new("zh" => 1000) }
 
       context "when available tag is 'zh' (exact match)" do
         let(:available_langtag) { :zh }
@@ -420,7 +405,7 @@ RSpec.describe AcceptLanguage::Matcher do
     end
 
     context "when language range is 'en'" do
-      let(:field) { "en" }
+      let(:matcher) { described_class.new("en" => 1000) }
 
       context "when available tag is 'english' (invalid: not a subtag)" do
         let(:available_langtag) { :english }
@@ -447,8 +432,8 @@ RSpec.describe AcceptLanguage::Matcher do
       end
     end
 
-    context "when language range is 'en-US'" do
-      let(:field) { "en-US" }
+    context "when language range is 'en-us'" do
+      let(:matcher) { described_class.new("en-us" => 1000) }
 
       context "when available tag is 'en'" do
         let(:available_langtag) { :en }
@@ -477,7 +462,7 @@ RSpec.describe AcceptLanguage::Matcher do
 
     context "when language range is 'de-de'" do
       # Example from RFC 4647 Section 3.3.1
-      let(:field) { "de-de" }
+      let(:matcher) { described_class.new("de-de" => 1000) }
 
       context "when available tag is 'de-DE-1996'" do
         let(:available_langtag) { :"de-DE-1996" }
@@ -505,7 +490,8 @@ RSpec.describe AcceptLanguage::Matcher do
     end
 
     context "with exclusions (q=0) respecting hyphen boundary" do
-      let(:field) { "*, zh;q=0" }
+      # "*, zh;q=0"
+      let(:matcher) { described_class.new("*" => 1000, "zh" => 0) }
 
       context "when 'zh' is excluded" do
         context "when 'zh-TW' is available" do
@@ -527,7 +513,8 @@ RSpec.describe AcceptLanguage::Matcher do
     end
 
     context "with wildcard respecting hyphen boundary" do
-      let(:field) { "zh, *;q=0.5" }
+      # "zh, *;q=0.5"
+      let(:matcher) { described_class.new("zh" => 1000, "*" => 500) }
       let(:available_langtags) { %i[zh-TW zhx-Hans] }
 
       it "matches 'zh-TW' via prefix and 'zhx-Hans' via wildcard" do
@@ -554,7 +541,7 @@ RSpec.describe AcceptLanguage::Matcher do
     # 'Accept-Language' header."
 
     context "when wildcard is the only range" do
-      let(:field) { "*" }
+      let(:matcher) { described_class.new("*" => 1000) }
       let(:available_langtags) { %i[en fr de] }
 
       it "matches the first available language" do
@@ -563,7 +550,8 @@ RSpec.describe AcceptLanguage::Matcher do
     end
 
     context "when wildcard has lower priority than explicit ranges" do
-      let(:field) { "fr, *;q=0.5" }
+      # "fr, *;q=0.5"
+      let(:matcher) { described_class.new("fr" => 1000, "*" => 500) }
 
       context "when French is available" do
         let(:available_langtags) { %i[fr en] }
@@ -590,7 +578,7 @@ RSpec.describe AcceptLanguage::Matcher do
     # explicitly listed are not acceptable".
 
     context "when '*;q=0' is used alone" do
-      let(:field) { "*;q=0" }
+      let(:matcher) { described_class.new("*" => 0) }
       let(:available_langtags) { %i[en fr de] }
 
       it "rejects all languages" do
@@ -599,7 +587,8 @@ RSpec.describe AcceptLanguage::Matcher do
     end
 
     context "when '*;q=0' is combined with explicit preferences" do
-      let(:field) { "en, fr;q=0.8, *;q=0" }
+      # "en, fr;q=0.8, *;q=0"
+      let(:matcher) { described_class.new("en" => 1000, "fr" => 800, "*" => 0) }
 
       context "when matching an explicitly listed language" do
         let(:available_langtags) { %i[en] }
@@ -635,7 +624,8 @@ RSpec.describe AcceptLanguage::Matcher do
     end
 
     context "when '*;q=0' is combined with explicit exclusions" do
-      let(:field) { "en, de;q=0, *;q=0" }
+      # "en, de;q=0, *;q=0"
+      let(:matcher) { described_class.new("en" => 1000, "de" => 0, "*" => 0) }
       let(:available_langtags) { %i[en de fr] }
 
       it "accepts only the explicitly allowed language" do
@@ -655,7 +645,8 @@ RSpec.describe AcceptLanguage::Matcher do
     end
 
     context "when wildcard has positive quality and specific exclusions" do
-      let(:field) { "*, en;q=0" }
+      # "*, en;q=0"
+      let(:matcher) { described_class.new("*" => 1000, "en" => 0) }
 
       context "when matching a non-excluded language" do
         let(:available_langtags) { %i[fr] }
@@ -694,7 +685,7 @@ RSpec.describe AcceptLanguage::Matcher do
   end
 
   describe "Empty available languages" do
-    let(:field) { "en, fr" }
+    let(:matcher) { described_class.new("en" => 1000, "fr" => 1000) }
     let(:available_langtags) { [] }
 
     it "returns nil" do
@@ -702,8 +693,8 @@ RSpec.describe AcceptLanguage::Matcher do
     end
   end
 
-  describe "Empty field (no preferences)" do
-    let(:field) { "" }
+  describe "Empty languages_range (no preferences)" do
+    let(:matcher) { described_class.new }
     let(:available_langtags) { %i[en fr] }
 
     it "returns nil (no languages match)" do
@@ -712,7 +703,7 @@ RSpec.describe AcceptLanguage::Matcher do
   end
 
   describe "Return type" do
-    let(:field) { "en" }
+    let(:matcher) { described_class.new("en" => 1000) }
     let(:available_langtags) { %i[en] }
 
     it "returns a Symbol" do
@@ -724,11 +715,66 @@ RSpec.describe AcceptLanguage::Matcher do
     end
 
     context "with complex tag" do
-      let(:field) { "zh-Hant" }
+      let(:matcher) { described_class.new("zh-hant" => 1000) }
       let(:available_langtags) { [:"zh-Hant-TW"] }
 
       it "returns the exact Symbol passed in" do
         expect(best_match).to be :"zh-Hant-TW"
+      end
+    end
+  end
+
+  describe "Internal state" do
+    describe "#excluded_langtags" do
+      context "with exclusions" do
+        let(:matcher) { described_class.new("*" => 1000, "en" => 0, "de" => 0) }
+
+        it "contains excluded language ranges" do
+          expect(matcher.excluded_langtags).to eq(Set["en", "de"])
+        end
+
+        it "does not contain the wildcard even when *;q=0" do
+          matcher_with_wildcard_exclusion = described_class.new("en" => 1000, "*" => 0)
+          expect(matcher_with_wildcard_exclusion.excluded_langtags.include?("*")).to be false
+        end
+      end
+
+      context "without exclusions" do
+        let(:matcher) { described_class.new("en" => 1000, "fr" => 800) }
+
+        it "is empty" do
+          expect(matcher.excluded_langtags).to be_empty
+        end
+      end
+    end
+
+    describe "#preferred_langtags" do
+      context "with multiple quality values" do
+        let(:matcher) { described_class.new("da" => 1000, "en-gb" => 800, "en" => 700) }
+
+        it "is sorted by descending quality" do
+          expect(matcher.preferred_langtags).to eq(%w[da en-gb en])
+        end
+      end
+
+      context "with exclusions" do
+        let(:matcher) { described_class.new("en" => 1000, "de" => 0, "fr" => 800) }
+
+        it "contains only languages with positive quality" do
+          expect(matcher.preferred_langtags).to eq(%w[en fr])
+        end
+
+        it "does not include excluded languages" do
+          expect(matcher.preferred_langtags.include?("de")).to be false
+        end
+      end
+
+      context "when all languages have the same quality" do
+        let(:matcher) { described_class.new("en" => 800, "fr" => 800, "de" => 800) }
+
+        it "preserves insertion order" do
+          expect(matcher.preferred_langtags).to eq(%w[en fr de])
+        end
       end
     end
   end
