@@ -6,19 +6,28 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
+    addressable (2.8.9)
+      public_suffix (>= 2.0.2, < 8.0)
     ast (2.4.3)
+    bigdecimal (4.0.1)
     defi (3.0.1)
     docile (1.4.1)
     expresenter (1.5.1)
-    json (2.18.0)
+    json (2.19.2)
+    json-schema (6.2.0)
+      addressable (~> 2.8)
+      bigdecimal (>= 3.1, < 5)
     language_server-protocol (3.17.0.5)
     lint_roller (1.1.0)
     matchi (4.0.0)
+    mcp (0.8.0)
+      json-schema (>= 4.1)
     parallel (1.27.0)
-    parser (3.3.10.1)
+    parser (3.3.10.2)
       ast (~> 2.4.1)
       racc
-    prism (1.8.0)
+    prism (1.9.0)
+    public_suffix (7.0.5)
     r_spec (1.0.7)
       r_spec-clone
     r_spec-clone (1.7.2)
@@ -29,23 +38,21 @@ GEM
     rainbow (3.1.1)
     rake (13.3.1)
     regexp_parser (2.11.3)
-    rubocop (1.82.1)
+    rubocop (1.85.1)
       json (~> 2.3)
       language_server-protocol (~> 3.17.0.2)
       lint_roller (~> 1.1.0)
+      mcp (~> 0.6)
       parallel (~> 1.10)
       parser (>= 3.3.0.2)
       rainbow (>= 2.2.2, < 4.0)
       regexp_parser (>= 2.9.3, < 3.0)
-      rubocop-ast (>= 1.48.0, < 2.0)
+      rubocop-ast (>= 1.49.0, < 2.0)
       ruby-progressbar (~> 1.7)
       unicode-display_width (>= 2.4.0, < 4.0)
-    rubocop-ast (1.49.0)
+    rubocop-ast (1.49.1)
       parser (>= 3.3.7.2)
       prism (~> 1.7)
-    rubocop-md (2.0.3)
-      lint_roller (~> 1.1)
-      rubocop (>= 1.72.1)
     rubocop-performance (1.26.1)
       lint_roller (~> 1.1)
       rubocop (>= 1.75.0, < 2.0)
@@ -84,7 +91,6 @@ DEPENDENCIES
   r_spec
   rake
   rubocop
-  rubocop-md
   rubocop-performance
   rubocop-rake
   rubocop-rspec
@@ -93,4 +99,4 @@ DEPENDENCIES
   yard
 
 BUNDLED WITH
-  4.0.4
+  4.0.8

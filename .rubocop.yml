@@ -12,7 +12,6 @@ inherit_mode:
     - Exclude
 
 plugins:
-  - rubocop-md
   - rubocop-performance
   - rubocop-rake
   - rubocop-rspec
